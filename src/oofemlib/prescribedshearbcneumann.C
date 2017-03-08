@@ -156,6 +156,13 @@ void PrescribedShearBCNeumann :: assemble(SparseMtrx &answer, TimeStep *tStep,
             answer.assemble(disp_loc_r, stress_loc_c, Ke); // Contributions to displacement equations
             answer.assemble(stress_loc_r, disp_loc_c, KeT); // Contribution to stress equations
         }
+
+
+        // Make sure that all diagonal entries are present to make the linear solver happy.
+        FloatMatrix Ke_diag(1,1);
+        Ke_diag(0,0) = 0.;
+        answer.assemble(stress_loc_r, stress_loc_c, Ke_diag);
+
     } else   {
         OOFEM_LOG_DEBUG("Skipping assembly in PrescribedShearBCNeumann::assemble().");
     }
@@ -202,7 +209,9 @@ void PrescribedShearBCNeumann :: integrateTangent(FloatMatrix &oTangent, Element
     FloatMatrix contrib;
 
     // Constant traction interpolation
-    FloatMatrix Nt = {{0.},{1.}};
+    FloatMatrix Nt(2,1);
+    Nt(0,0) = 0.;
+    Nt(1,0) = 1.;
 
     Domain *domain = e->giveDomain();
 
@@ -233,7 +242,6 @@ void PrescribedShearBCNeumann :: integrateTangent(FloatMatrix &oTangent, Element
         ir->SetUpPointsOnLine(numPointsPerSeg, matMode);
     } else {
         ir.reset( interp->giveBoundaryIntegrationRule(order, iBndIndex) );
-        ir->setElement(e);
     }
 
     oTangent.clear();
@@ -242,7 +250,15 @@ void PrescribedShearBCNeumann :: integrateTangent(FloatMatrix &oTangent, Element
     for ( auto &gp: *ir ) {
 
     	// Check if the current GP is on Gamma^+, Gamma^-, top, or bottom.
-    	const FloatArray &gcoords = gp->giveGlobalCoordinates();
+        const FloatArray &lcoords = gp->giveNaturalCoordinates();
+        FEIElementGeometryWrapper cellgeo(e);
+
+        FloatArray gcoords;
+        interp->boundaryLocal2Global(gcoords, iBndIndex, lcoords, cellgeo);
+
+        FloatArray el_lcoords;
+        interp->global2local(el_lcoords, gcoords, cellgeo);
+
 
     	double c = 0.0;
     	if( pointIsOnRightEdge(gcoords) ) {
@@ -254,13 +270,11 @@ void PrescribedShearBCNeumann :: integrateTangent(FloatMatrix &oTangent, Element
     	}
 
 
-        const FloatArray &lcoords = gp->giveNaturalCoordinates();
-        FEIElementGeometryWrapper cellgeo(e);
 
         // Evaluate the normal;
         double detJ = interp->boundaryEvalNormal(normal, iBndIndex, lcoords, cellgeo);
 
-        interp->boundaryEvalN(nu, iBndIndex, lcoords, cellgeo);
+        interp->evalN(nu, el_lcoords, cellgeo);
         // If cracks cross the edge, special treatment is necessary.
         // Exploit the XfemElementInterface to minimize duplication of code.
         if ( xfemElInt != NULL && domain->hasXfemManager() ) {
