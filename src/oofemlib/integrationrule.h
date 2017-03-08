@@ -192,6 +192,9 @@ public:
 
     /** Returns reference to element containing receiver */
     Element *giveElement() { return elem; }
+
+    void setElement(Element *e) {elem = e;}
+
     /** Returns receiver number */
     int giveNumber() { return this->number; }
     /** Returns the domain for the receiver */
