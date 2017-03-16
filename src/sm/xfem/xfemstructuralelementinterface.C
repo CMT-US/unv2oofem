@@ -82,8 +82,8 @@ XfemStructuralElementInterface :: XfemStructuralElementInterface(Element *e) :
     mpCZMat(NULL),
     mCZMaterialNum(-1),
     mCSNumGaussPoints(4),
-	mIncludeBulkJump(true),
-	mIncludeBulkCorr(true)
+	mIncludeBulkJump(false),
+	mIncludeBulkCorr(false)
 {
 
 
@@ -1582,6 +1582,16 @@ XfemStructuralElementInterface :: initializeCZFrom(InputRecord *ir)
     IR_GIVE_OPTIONAL_FIELD(ir, planeStrainFlag, _IFT_XfemElementInterface_PlaneStrain);
     if ( planeStrainFlag == 1 ) {
         mUsePlaneStrain = true;
+    }
+
+    if( ir->hasField(_IFT_XfemStructuralElementInterface_IncludeBulkJump) ) {
+    	mIncludeBulkJump = true;
+    	printf("Including bulk contribution to displacement jump.\n");
+    }
+
+    if( ir->hasField(_IFT_XfemStructuralElementInterface_IncludeBulkCorr) ) {
+    	mIncludeBulkCorr = true;
+    	printf("Including bulk correction term.\n");
     }
 
     return IRRT_OK;
