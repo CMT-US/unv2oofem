@@ -25,6 +25,7 @@ set (sm_element
     Elements/Bars/qtruss1d.C 
     Elements/Bars/qtruss1dgrad.C
     Elements/Beams/libeam2d.C 
+    Elements/Beams/libeam2dxy.C
     Elements/Beams/libeam2dnl.C
     Elements/Beams/libeam3d.C 
     Elements/Beams/libeam3dnl.C 
