@@ -52,6 +52,9 @@
 #include "unknownnumberingscheme.h"
 #include "prescribedmean.h"
 #include "feinterpol.h"
+#include "prescribedgradientbcneumann.h"
+#include "prescribedgradient.h"
+#include "floatarray.h"
     
 #ifdef __FM_MODULE
 #include "../fm/tr21stokes.h"
@@ -318,7 +321,10 @@ MatlabExportModule :: doOutputMesh(TimeStep *tStep, FILE *FID)
 
     fprintf(FID, "]';\n");
 
+    //Temporary fix for exporting mesh connectivity for domains which have elements with different number of DofMangagers.
+    //Assumed that there is no element with number 0. /adsci
     int numberOfDofMans=domain->giveElement(1)->giveNumberOfDofManagers();
+    int startElDiffDofMans=0;
 
     fprintf(FID, "\tmesh.t=[");
     for ( auto &elem : domain->giveElements() ) {
@@ -326,11 +332,37 @@ MatlabExportModule :: doOutputMesh(TimeStep *tStep, FILE *FID)
             for ( int j = 1; j <= elem->giveNumberOfDofManagers(); j++ ) {
                 fprintf( FID, "%d,", elem->giveDofManagerNumber(j) );
             }
+            fprintf(FID, ";");
+        } else {
+            if (startElDiffDofMans == 0) { startElDiffDofMans=elem->giveNumber();}
+            for ( int j = 1; j <= numberOfDofMans; j++ ) {
+                fprintf(FID, "0,");
+            }
+            fprintf(FID, ";");
         }
-        fprintf(FID, ";");
     }
-
     fprintf(FID, "]';\n");
+
+    //fix output for different number of DOFs within the same domain - only two different possibilities are supported now
+    //@todo: fix this part with more modular way /adsci
+    if (startElDiffDofMans) {
+        int numberOfDiffDofMans=domain->giveElement(startElDiffDofMans)->giveNumberOfDofManagers();
+
+        fprintf(FID, "\tmesh.t2=[");
+        for (auto &elem : domain->giveElements() ) {
+            if (elem->giveNumberOfDofManagers() == numberOfDiffDofMans ) {
+                for (int j = 1; j <= elem->giveNumberOfDofManagers(); j++) {
+                    fprintf( FID, "%d,", elem->giveDofManagerNumber(j) );
+                }
+            } else {
+                for (int j = 1; j <= numberOfDiffDofMans; j++) {
+                    fprintf(FID, "0,");
+                }
+            }
+            fprintf(FID, ";");
+        }
+        fprintf(FID, "]';\n");
+    }
 }
 
 
@@ -391,7 +423,7 @@ MatlabExportModule :: doOutputData(TimeStep *tStep, FILE *FID)
     for ( size_t i = 0; i < valuesList.size(); i++ ) {
         fprintf(FID, "\tdata.a{%lu}=[", static_cast< long unsigned int >(i) + 1);
         for ( double val: valuesList[i] ) {
-            fprintf( FID, "%f,", val );
+            fprintf( FID, "%.6e,", val );
         }
 
         fprintf(FID, "];\n");
@@ -452,8 +484,10 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
 
     */
 
+    //hack to output an empty object if no boundary conditions are of the types defined below. @todo: fix that / adsci
+    fprintf(FID, "\tspecials=[];\n");
     // Output weak periodic boundary conditions
-    unsigned int wpbccount = 1, sbsfcount = 1, mcount = 1;
+    unsigned int wpbccount = 1, sbsfcount = 1, mcount = 1, pgbcncount=1, pgcount=1;
 
     for ( auto &gbc : domain->giveBcs() ) {
         WeakPeriodicBoundaryCondition *wpbc = dynamic_cast< WeakPeriodicBoundaryCondition * >( gbc.get() );
@@ -489,6 +523,30 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
             }
             fprintf(FID, "];\n");
             mcount++;
+        }
+         //output of homogenized stress for PrescribedGradientBCNeumann /adsci
+        PrescribedGradientBCNeumann *pgbcn = dynamic_cast<PrescribedGradientBCNeumann *> (gbc.get() );
+        FloatArray stressN;
+        if (pgbcn) {
+            pgbcn->computeField(stressN, tStep);
+            fprintf(FID, "\tspecials.prescribedgradientbcneumann{%u}.stress=[",pgbcncount);
+            for ( auto i : stressN) {
+                fprintf(FID, "%.15e\t", i);
+            }
+            fprintf(FID, "];\n");
+            ++pgbcncount;
+        }
+        //output of homogenized stress for PrescribedGradient /adsci
+        PrescribedGradient *pg = dynamic_cast<PrescribedGradient *> (gbc.get() );
+        FloatArray stressD;
+        if (pg) {
+            pg->computeField(stressD,tStep);
+            fprintf(FID, "\tspecials.prescribedgradient{%u}.stress=[",pgcount);
+            for (auto i : stressD) {
+                fprintf(FID, "%.15e\t", i);
+            }
+            fprintf(FID, "];\n");
+            ++pgcount;
         }
     }
 }
@@ -565,7 +623,7 @@ MatlabExportModule :: doOutputReactionForces(TimeStep *tStep,    FILE *FID)
                 int pos = eqnMap.findFirstIndexOf( num );
                 dofIDs.followedBy(dof->giveDofID());
                 if ( pos > 0 ) {
-                    fprintf(FID, "%e ", reactions.at(pos));
+                    fprintf(FID, "%.9e ", reactions.at(pos));
                 } else {
                     fprintf( FID, "%e ", 0.0 ); // if not prescibed output zero
                 }
