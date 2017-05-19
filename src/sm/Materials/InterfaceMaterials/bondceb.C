@@ -62,11 +62,11 @@ BondCEBMaterial :: giveEngTraction_3d(FloatArray &answer, GaussPoint *gp, const 
 
     // normal traction evaluated elastically
     answer.resize(3);
-    answer.at(1) = kn * jump.at(1);
+    answer.at(3) = kn * jump.at(3);
 
     // trial values of shear tractions evaluated elastically
     double s = 0., dKappa = 0.;
-    for ( int i = 2; i <= 3; i++ ) {
+    for ( int i = 1; i <= 2; i++ ) {
         double depsi = jump.at(i) - status->giveJump().at(i);
         answer.at(i) = status->giveTraction().at(i) + ks * depsi;
         s += answer.at(i) * answer.at(i);
@@ -87,7 +87,7 @@ BondCEBMaterial :: giveEngTraction_3d(FloatArray &answer, GaussPoint *gp, const 
 
     // reduce shear tractions, if needed
     if ( s > smax ) {
-        for ( int i = 2; i <= 3; i++ ) {
+        for ( int i = 1; i <= 2; i++ ) {
             answer.at(i) *= smax / s;
         }
     }
@@ -105,8 +105,8 @@ BondCEBMaterial :: give3dStiffnessMatrix_Eng(FloatMatrix &answer, MatResponseMod
     ///@todo Only elastic tangent supported
     answer.resize(3, 3);
     answer.zero();
-    answer.at(1, 1) = kn;
-    answer.at(2, 2) = answer.at(3, 3) = ks;
+    answer.at(3, 3) = kn;
+    answer.at(1, 1) = answer.at(2, 2) = ks;
 }
 
 double
