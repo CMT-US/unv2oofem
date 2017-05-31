@@ -283,6 +283,8 @@ set (core_bc
     prescribedgradientbcweakperiodic.C
     prescribedgradientbcweakdirichlet.C
     prescribedgradientbcperiodic.C
+    prescribedgradientdd.C
+    prescribedgradientdn.C
     mixedgradientpressurebc.C
     mixedgradientpressuredirichlet.C
     mixedgradientpressureneumann.C

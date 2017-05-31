@@ -54,6 +54,8 @@
 #include "feinterpol.h"
 #include "prescribedgradientbcneumann.h"
 #include "prescribedgradient.h"
+#include "prescribedgradientdd.h"
+#include "prescribedgradientdn.h"
 #include "floatarray.h"
     
 #ifdef __FM_MODULE
@@ -487,7 +489,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
     //hack to output an empty object if no boundary conditions are of the types defined below. @todo: fix that / adsci
     fprintf(FID, "\tspecials=[];\n");
     // Output weak periodic boundary conditions
-    unsigned int wpbccount = 1, sbsfcount = 1, mcount = 1, pgbcncount=1, pgcount=1;
+    unsigned int wpbccount = 1, sbsfcount = 1, mcount = 1, pgbcncount=1, pgcount=1, pgddcount=1, pgdncount=1;
 
     for ( auto &gbc : domain->giveBcs() ) {
         WeakPeriodicBoundaryCondition *wpbc = dynamic_cast< WeakPeriodicBoundaryCondition * >( gbc.get() );
@@ -547,6 +549,30 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
             }
             fprintf(FID, "];\n");
             ++pgcount;
+        }
+        //output of homogenized stress for PrescribedGradientDD /adsci
+        PrescribedGradientDD *pgdd = dynamic_cast<PrescribedGradientDD *> (gbc.get() );
+        FloatArray stressDD;
+        if (pgdd) {
+            pgdd->computeField(stressDD,tStep);
+            fprintf(FID, "\tspecials.prescribedgradient{%u}.stress=[",pgddcount);
+            for (auto i : stressDD) {
+                fprintf(FID, "%.15e\t", i);
+            }
+            fprintf(FID, "];\n");
+            ++pgddcount;
+        }
+        //output of homogenized stress for PrescribedGradientDN /adsci
+        PrescribedGradientDN *pgdn = dynamic_cast<PrescribedGradientDN *> (gbc.get() );
+        FloatArray stressDN;
+        if (pgdn) {
+            pgdn->computeField(stressDN,tStep);
+            fprintf(FID, "\tspecials.prescribedgradient{%u}.stress=[",pgdncount);
+            for (auto i : stressDN) {
+                fprintf(FID, "%.15e\t", i);
+            }
+            fprintf(FID, "];\n");
+            ++pgdncount;
         }
     }
 }
