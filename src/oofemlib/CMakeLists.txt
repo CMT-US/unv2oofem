@@ -285,6 +285,7 @@ set (core_bc
     prescribedgradientbcperiodic.C
     prescribedgradientdd.C
     prescribedgradientdn.C
+    prescribedgradientnn.C
     mixedgradientpressurebc.C
     mixedgradientpressuredirichlet.C
     mixedgradientpressureneumann.C

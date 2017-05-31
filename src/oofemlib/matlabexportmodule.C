@@ -56,6 +56,7 @@
 #include "prescribedgradient.h"
 #include "prescribedgradientdd.h"
 #include "prescribedgradientdn.h"
+#include "prescribedgradientnn.h"
 #include "floatarray.h"
     
 #ifdef __FM_MODULE
@@ -489,7 +490,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
     //hack to output an empty object if no boundary conditions are of the types defined below. @todo: fix that / adsci
     fprintf(FID, "\tspecials=[];\n");
     // Output weak periodic boundary conditions
-    unsigned int wpbccount = 1, sbsfcount = 1, mcount = 1, pgbcncount=1, pgcount=1, pgddcount=1, pgdncount=1;
+    unsigned int wpbccount = 1, sbsfcount = 1, mcount = 1, pgbcncount=1, pgcount=1, pgddcount=1, pgdncount=1, pgnncount=1;
 
     for ( auto &gbc : domain->giveBcs() ) {
         WeakPeriodicBoundaryCondition *wpbc = dynamic_cast< WeakPeriodicBoundaryCondition * >( gbc.get() );
@@ -555,7 +556,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
         FloatArray stressDD;
         if (pgdd) {
             pgdd->computeField(stressDD,tStep);
-            fprintf(FID, "\tspecials.prescribedgradient{%u}.stress=[",pgddcount);
+            fprintf(FID, "\tspecials.prescribedgradientDD{%u}.stress=[",pgddcount);
             for (auto i : stressDD) {
                 fprintf(FID, "%.15e\t", i);
             }
@@ -567,12 +568,24 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
         FloatArray stressDN;
         if (pgdn) {
             pgdn->computeField(stressDN,tStep);
-            fprintf(FID, "\tspecials.prescribedgradient{%u}.stress=[",pgdncount);
+            fprintf(FID, "\tspecials.prescribedgradientDN{%u}.stress=[",pgdncount);
             for (auto i : stressDN) {
                 fprintf(FID, "%.15e\t", i);
             }
             fprintf(FID, "];\n");
             ++pgdncount;
+        }
+        //output of homogenized stress for PrescribedGradientNN /adsci
+        PrescribedGradientNN *pgnn = dynamic_cast<PrescribedGradientNN *> (gbc.get() );
+        FloatArray stressNN;
+        if (pgnn) {
+            pgnn->computeField(stressNN,tStep);
+            fprintf(FID, "\tspecials.prescribedgradientNN{%u}.stress=[",pgnncount);
+            for (auto i: stressNN) {
+                fprintf(FID, "%.15e\t", i);
+            }
+            fprintf(FID, "];\n");
+            ++pgnncount;
         }
     }
 }
