@@ -53,7 +53,6 @@ class Element;
  * structures.
  *
  * Based on PrescribedGradientBCNeumann.
- * @param thick Thickness of 2D RVE
  * 
  * @author Adam Sciegaj
  */

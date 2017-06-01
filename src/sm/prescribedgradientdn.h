@@ -57,7 +57,7 @@ namespace oofem {
  * modelling of reinforced concrete structures: effective response and sub-scale fracture development. Works with 2D RVEs 
  * comprising solid elements (concrete) and reinforcement (beam elements). Useful in multi-scale analyses of reinforced concrete 
  * structures.
- * @param thick Thickness of 2D RVE
+ * 
  * @author Adam Sciegaj
  */
 class OOFEM_EXPORT PrescribedGradientDN : public BoundaryCondition, public PrescribedGradientHomogenization
