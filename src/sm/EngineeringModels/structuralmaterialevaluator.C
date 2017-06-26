@@ -79,7 +79,7 @@ IRResultType StructuralMaterialEvaluator :: initializeFrom(InputRecord *ir)
     this->suppressOutput = true;
 
     // Compute the strain control (everything not controlled by stress)
-    for ( int i = 1; i <= 6; ++i ) {
+    for ( int i = 1; i <= 3; ++i ) {
         if ( !sControl.contains(i) ) {
             eControl.followedBy(i);
         }
@@ -93,8 +93,8 @@ void StructuralMaterialEvaluator :: solveYourself()
 {
     Domain *d = this->giveDomain(1);
 
-    MaterialMode mode = _3dMat;
-    FloatArray initialStrain(6);
+    MaterialMode mode = _PlaneStress;
+    FloatArray initialStrain(3);
     gps.clear();
     gps.reserve(d->giveNumberOfMaterialModels());
     for ( int i = 1; i <= d->giveNumberOfMaterialModels(); i++ ) {

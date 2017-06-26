@@ -127,6 +127,8 @@ StructuralFE2Material :: giveRealStressVector_3d(FloatArray &answer, GaussPoint 
         answer = stress;
     } if ( stress.giveSize() == 9 ) {
         answer = {stress[0], stress[1], stress[2], 0.5*(stress[3]+stress[6]), 0.5*(stress[4]+stress[7]), 0.5*(stress[5]+stress[8])};
+    } if (stress.giveSize() == 4 ) { //hack for plane stress
+        answer = {stress[0], stress[1], 0.5*(stress[2]+stress[3])};
     } else {
         StructuralMaterial::giveFullSymVectorForm(answer, stress, gp->giveMaterialMode() );
     }
