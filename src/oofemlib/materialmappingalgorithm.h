@@ -59,7 +59,7 @@ class MaterialStatus;
  * 1) The material service is called for each IP to perform all mappings. The mapper object is used (created locally
  * or class object) to map all necessary variables. The problem is that some mappers can be used efficiently if
  * they are initialized for specific position and then they can be reused for all internal variables. The others,
- * however, are efficient if if they are initialized for certain variable (of smoothing type) and then are used
+ * however, are efficient if they are initialized for certain variable (of smoothing type) and then are used
  * for all possible points. This is the key problem, whether to initialize mapper for position or for variable first.
  * This also prevents to create some general efficient interface.
  * 2) The other possibility is to make mapper object responsible for mapping variables in all IPs of material model.

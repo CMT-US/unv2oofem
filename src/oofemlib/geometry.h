@@ -175,7 +175,7 @@ public:
      * Line 1 has start point iP1 and end point iP2.
      * Line 2 has start point iQ1 and end point iQ2.
      */
-    static double computeLineDistance(const FloatArray &iP1, const FloatArray &iP2, const FloatArray &iQ1, const FloatArray &iQ2);
+    static double computeLineDistance(const FloatArray &iP1, const FloatArray &iP2, const FloatArray &iQ1, const FloatArray &iQ2, FloatArray *oIntersecPoint = NULL, bool *oIntersects = NULL);
 
     /**
      * Returns start and end tip of the geometry, if applicable.
