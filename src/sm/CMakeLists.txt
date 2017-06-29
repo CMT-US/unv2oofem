@@ -116,6 +116,7 @@ set (sm_boundary_conditions
     prescribedgradientdd.C
     prescribedgradientdn.C
     prescribedgradientnn.C
+    prescribedgradientsubbcs.C
     )
 
 set (sm_crosssection

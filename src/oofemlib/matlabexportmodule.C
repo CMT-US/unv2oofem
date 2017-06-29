@@ -57,6 +57,7 @@
 #include "prescribedgradientdd.h"
 #include "prescribedgradientdn.h"
 #include "prescribedgradientnn.h"
+#include "prescribedgradientsubbcs.h"
 #include "floatarray.h"
     
 #ifdef __FM_MODULE
@@ -490,7 +491,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
     //hack to output an empty object if no boundary conditions are of the types defined below. @todo: fix that / adsci
     fprintf(FID, "\tspecials=[];\n");
     // Output weak periodic boundary conditions
-    unsigned int wpbccount = 1, sbsfcount = 1, mcount = 1, pgbcncount=1, pgcount=1, pgddcount=1, pgdncount=1, pgnncount=1;
+    unsigned int wpbccount = 1, sbsfcount = 1, mcount = 1, pgbcncount=1, pgcount=1, pgddcount=1, pgdncount=1, pgnncount=1, pgsubcount=1;
 
     for ( auto &gbc : domain->giveBcs() ) {
         WeakPeriodicBoundaryCondition *wpbc = dynamic_cast< WeakPeriodicBoundaryCondition * >( gbc.get() );
@@ -586,6 +587,18 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
             }
             fprintf(FID, "];\n");
             ++pgnncount;
+        }
+        //output of homogenized stress for PrescribedGradientSubBCs /adsci
+        PrescribedGradientSubBCs *pgsub = dynamic_cast<PrescribedGradientSubBCs *> (gbc.get() );
+        FloatArray stressSubBCs;
+        if (pgsub) {
+            pgsub->computeField(stressSubBCs,tStep);
+            fprintf(FID, "\tspecials.prescribedgradientSubBCs{%u}.stress=[",pgsubcount);
+            for (auto i: stressSubBCs) {
+                fprintf(FID, "%.15e\t", i);
+            }
+            fprintf(FID, "];\n");
+            ++pgsubcount;
         }
     }
 }

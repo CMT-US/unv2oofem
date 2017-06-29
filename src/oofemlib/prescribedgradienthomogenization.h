@@ -38,6 +38,7 @@
 #include "inputrecord.h"
 #include "floatarray.h"
 #include "floatmatrix.h"
+#include "dofmanager.h"
 
 #include "error.h"
 
@@ -74,7 +75,7 @@ public:
     PrescribedGradientHomogenization() { }
     virtual ~PrescribedGradientHomogenization() { }
 
-    virtual double domainSize() {OOFEM_ERROR("Not implemented."); return 0.0;}
+    virtual double domainSize() { OOFEM_ERROR("Not implemented."); return 0.0; }
 
     /**
      * Initializes receiver according to object description stored in input record.
@@ -105,14 +106,14 @@ public:
      * Set prescribed gradient.
      * @param t New prescribed gradient.
      */
-    void setPrescribedGradient(const FloatMatrix &t) { mGradient = t; }
+    virtual void setPrescribedGradient(const FloatMatrix &t) { mGradient = t; }
 
     /**
      * Sets the prescribed gradient from the matrix from given voigt notation.
      * Assumes use of double values for off-diagonal, usually the way for strain in Voigt form.
      * @param t Vector in voigt format.
      */
-    void setPrescribedGradientVoigt(const FloatArray &t);
+    virtual void setPrescribedGradientVoigt(const FloatArray &t);
     /**
      * Gives back the applied gradient in Voigt form.
      * @param oGradient The applied gradient, in Voigt form.
@@ -123,7 +124,7 @@ public:
      * Set the center coordinate for the prescribed values to be set for.
      * @param x Center coordinate.
      */
-    void setCenterCoordinate(FloatArray &x) { mCenterCoord = x; }
+    virtual void setCenterCoordinate(FloatArray &x) { mCenterCoord = x; }
     /// Returns the center coordinate
     FloatArray &giveCenterCoordinate() { return mCenterCoord; }
 
