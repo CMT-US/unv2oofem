@@ -35,12 +35,18 @@
 #ifndef XFEMSOLVERINTERFACE_H_
 #define XFEMSOLVERINTERFACE_H_
 
+#include "irresulttype.h"
+
+#define _IFT_XfemSolverInterface_ForceRemap "force_remap"
+
+
 namespace oofem {
 
 class TimeStep;
 class StructuralEngngModel;
 class StaticStructural;
 class FloatArray;
+class InputRecord;
 
 /**
  * Provides extra solver functionality needed for XFEM.
@@ -53,9 +59,13 @@ public:
 
     void propagateXfemInterfaces(TimeStep *tStep, StructuralEngngModel &ioEngngModel, bool iRecomputeStepAfterCrackProp);
 
+    virtual IRResultType initializeFrom(InputRecord *ir);
+
 
 protected:
     bool mNeedsVariableMapping;
+
+    bool mForceRemap;
 };
 
 } /* namespace oofem */

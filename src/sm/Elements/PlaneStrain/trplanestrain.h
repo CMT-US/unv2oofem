@@ -99,6 +99,8 @@ public:
     virtual const char *giveClassName() const { return "TrPlaneStrain"; }
     virtual IRResultType initializeFrom(InputRecord *ir);
 
+    virtual int mapStateVariables(Domain &iOldDom, const TimeStep &iTStep);
+
 protected:
     virtual int giveNumberOfIPForMassMtrxIntegration() { return 1; }
 };
