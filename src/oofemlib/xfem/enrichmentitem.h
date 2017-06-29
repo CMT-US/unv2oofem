@@ -128,7 +128,7 @@ public:
     const IntArray *giveEnrichesDofsWithIdArray() const { return & mpEnrichesDofsWithIdArray; }
     int giveNumberOfEnrDofs() const;
 
-    virtual void writeVtkDebug() const {};
+    virtual void writeVtkDebug(int ei_index = 0) const {};
 
     // Spatial query
     bool isElementEnriched(const Element *element) const;
