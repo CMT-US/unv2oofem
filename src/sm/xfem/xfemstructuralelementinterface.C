@@ -2044,7 +2044,7 @@ void XfemStructuralElementInterface :: computeIPAverageInTriangle(FloatArray &an
         for ( IntegrationPoint *ip: *iRule ) {
 
             FloatArray globCoord = ip->giveGlobalCoordinates();
-            globCoord.resizeWithValues(2);
+            globCoord.resizeWithValues(3);
 
             if( iTri.pointIsInTriangle(globCoord) ) {
                 elem->giveIPValue(temp, ip, isType, tStep);
