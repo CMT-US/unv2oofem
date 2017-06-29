@@ -10,6 +10,8 @@
 #include "ConcreteMaterials/concrete3.h"
 #include "classfactory.h"
 
+#include "gausspoint.h"
+#include "dynamicinputrecord.h"
 
 namespace oofem {
 REGISTER_Material(Concrete3ViscReg);
@@ -37,6 +39,14 @@ Concrete3ViscReg :: initializeFrom(InputRecord *ir)
 }
 
 void
+Concrete3ViscReg :: giveInputRecord(DynamicInputRecord &input)
+{
+	Concrete3 :: giveInputRecord(input);
+
+    input.setField(mRegCoeff, _IFT_Concrete3ViscReg_RegCoeff);
+}
+
+void
 Concrete3ViscReg :: giveMaterialStiffnessMatrix(FloatMatrix &answer,
                                             MatResponseMode mode,
                                             GaussPoint *gp,
@@ -44,15 +54,55 @@ Concrete3ViscReg :: giveMaterialStiffnessMatrix(FloatMatrix &answer,
 {
 //	printf("Entering Concrete3ViscReg :: giveMaterialStiffnessMatrix\n");
 
-	Concrete3::giveMaterialStiffnessMatrix(answer, mode, gp, tStep);
+	bool useNumTangent = true;
+    if ( useNumTangent ) {
+//    	printf("Using numerical tangent.\n");
+        // Numerical tangent
+    	RCM2MaterialStatus *status = static_cast<RCM2MaterialStatus*>( this->giveStatus( gp ) );
+        double h = 1.0e-6;
 
-	const double dt = tStep->giveTimeIncrement();
-
-	for( int i = 0;  i < answer.giveNumberOfColumns(); i++ ) {
-		answer(i,i) += (mRegCoeff/dt);
-	}
+        const FloatArray &epsRed = status->giveTempStrainVector();
+        FloatArray eps = epsRed;
+//        StructuralMaterial::giveFullSymVectorForm(eps, epsRed, gp->giveMaterialMode() );
 
 
+        int dim = eps.giveSize();
+        answer.resize(dim, dim);
+        answer.zero();
+
+        FloatArray sig, sigPert, epsPert;
+
+        for(int i = 1; i <= dim; i++) {
+            // Add a small perturbation to the strain
+            epsPert = eps;
+            epsPert.at(i) += h;
+
+            giveRealStressVector_3d(sigPert, gp, epsPert, tStep);
+            answer.setColumn(sigPert, i);
+        }
+
+        giveRealStressVector_3d(sig, gp, eps, tStep);
+
+        for(int i = 1; i <= dim; i++) {
+            for(int j = 1; j <= dim; j++) {
+                answer.at(j,i) -= sig.at(j);
+                answer.at(j,i) /= h;
+            }
+        }
+
+    } else {
+
+
+
+		Concrete3::giveMaterialStiffnessMatrix(answer, mode, gp, tStep);
+
+		const double dt = tStep->giveTimeIncrement();
+
+		for( int i = 0;  i < answer.giveNumberOfColumns(); i++ ) {
+			answer(i,i) += (mRegCoeff/dt);
+		}
+
+    }
 }
 
 void

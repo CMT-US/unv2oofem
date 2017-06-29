@@ -164,6 +164,7 @@ set (sm_material
     Materials/BoneMaterials/trabbonegrad3d.C
     Materials/ConcreteMaterials/concrete2.C 
     Materials/ConcreteMaterials/concrete3.C 
+    Materials/concrete3viscreg.C 
     Materials/ConcreteMaterials/concretedpm.C 
     Materials/ConcreteMaterials/concretedpm2.C
     Materials/ConcreteMaterials/idm1.C 
@@ -279,12 +280,14 @@ set (sm_xfem
     xfem/enrichmentitems/shellcrack.C
     xfem/propagationlaws/plhoopstresscirc.C
     xfem/propagationlaws/plprincipalstrain.C
+    xfem/propagationlaws/plstrictellipticity.C
     xfem/propagationlaws/plmaterialforce.C
     xfem/propagationlaws/plczdamageradius.C
     xfem/xfemstructuremanager.C
     xfem/matforceevaluator.C
     xfem/nucleationcriteria/ncprincipalstress.C
     xfem/nucleationcriteria/ncprincipalstrain.C
+    xfem/nucleationcriteria/ncstrictellipticity.C
     EngineeringModels/xfemsolverinterface.C
     )
 

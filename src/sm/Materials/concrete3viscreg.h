@@ -57,6 +57,7 @@ public:
 	virtual ~Concrete3ViscReg();
 
     virtual IRResultType initializeFrom(InputRecord *ir);
+    virtual void giveInputRecord(DynamicInputRecord &input);
 
     virtual const char *giveClassName() const { return "Concrete3ViscReg"; }
     virtual const char *giveInputRecordName() const { return _IFT_Concrete3ViscReg_Name; }
