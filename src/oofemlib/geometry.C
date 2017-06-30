@@ -330,7 +330,7 @@ void Line :: computeIntersectionPoints(Element *element, std :: vector< FloatArr
 
         FloatArray intersecPoint;
         bool intersects = false;
-        double dist = computeLineDistance(p1, p2, q1, q2, &intersecPoint, &intersects);
+        computeLineDistance(p1, p2, q1, q2, &intersecPoint, &intersects);
 
         if(intersects) {
             oIntersectionPoints.push_back(intersecPoint);

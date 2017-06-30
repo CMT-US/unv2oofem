@@ -1112,9 +1112,9 @@ std :: shared_ptr< SparseMtrx > PrescribedGradientBCWeak :: giveKuu(IntArray &oL
     bool symmetric_matrix = false;
     SparseMtrxType stype = solver->giveRecommendedMatrix(symmetric_matrix);
 //    double rve_size = this->domainSize();
-    double Lx = mUC[0] - mLC[0];
-    double Ly = mUC[1] - mLC[1];
-    double rve_size = Lx*Ly;
+    //double Lx = mUC[0] - mLC[0];
+    //double Ly = mUC[1] - mLC[1];
+    //double rve_size = Lx*Ly;
 
 
     EModelDefaultEquationNumbering fnum;

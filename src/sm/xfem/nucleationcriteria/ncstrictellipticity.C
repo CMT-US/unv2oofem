@@ -73,7 +73,7 @@ std::vector<std::unique_ptr<EnrichmentItem>> NCStrictEllipticity::nucleateEnrich
 
 		int numIR = el->giveNumberOfIntegrationRules();
 
-		int csNum = el->giveCrossSection()->giveNumber();
+		//int csNum = el->giveCrossSection()->giveNumber();
 
 		if(true) { // check cross section index
 
