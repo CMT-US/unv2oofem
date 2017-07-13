@@ -310,7 +310,7 @@ public:
      * @param kappa Equivalent strain measure.
      * @param gp Integration point.
      */
-    double damageFunctionPrime(double kappa, GaussPoint *gp);
+    virtual double damageFunctionPrime(double kappa, GaussPoint *gp);
     /**
      * Returns the value of compliance parameter
      * corresponding to a given value
