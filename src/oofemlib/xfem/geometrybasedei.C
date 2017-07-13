@@ -944,7 +944,7 @@ void GeometryBasedEI :: computeIntersectionPoints(std :: vector< FloatArray > &o
     }
 }
 
-void GeometryBasedEI :: writeVtkDebug() const
+void GeometryBasedEI :: writeVtkDebug(int ei_index) const
 {
     // For debugging only
 	int tStepInd = 0;
@@ -952,7 +952,7 @@ void GeometryBasedEI :: writeVtkDebug() const
 	if(tStep != NULL) {
 		tStepInd = tStep->giveNumber();
 	}
-    this->mpBasicGeometry->printVTK(tStepInd, number);
+    this->mpBasicGeometry->printVTK(tStepInd, ei_index);
 }
 
 void GeometryBasedEI :: giveSubPolygon(std :: vector< FloatArray > &oPoints, const double &iXiStart, const double &iXiEnd) const

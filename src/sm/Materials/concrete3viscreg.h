@@ -32,42 +32,47 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef XFEMSOLVERINTERFACE_H_
-#define XFEMSOLVERINTERFACE_H_
+#ifndef SRC_SM_MATERIALS_CONCRETE3VISCREG_H_
+#define SRC_SM_MATERIALS_CONCRETE3VISCREG_H_
 
-#include "irresulttype.h"
+#include "ConcreteMaterials/concrete3.h"
 
-#define _IFT_XfemSolverInterface_ForceRemap "force_remap"
-
+///@name Input fields for Concrete3ViscReg
+//@{
+#define _IFT_Concrete3ViscReg_Name "concrete3viscreg"
+#define _IFT_Concrete3ViscReg_RegCoeff "regcoeff"
+//@}
 
 namespace oofem {
-
-class TimeStep;
-class StructuralEngngModel;
-class StaticStructural;
-class FloatArray;
-class InputRecord;
-
 /**
- * Provides extra solver functionality needed for XFEM.
- * @author Erik Svenning
+ * This class implements a Concrete3 material in a finite element problem,
+ * with the addition of viscous regularization to improve convergence
+ * in the Newton iterations.
+ *
  */
-class XfemSolverInterface {
-public:
-    XfemSolverInterface();
-    virtual ~XfemSolverInterface();
 
-    void propagateXfemInterfaces(TimeStep *tStep, StructuralEngngModel &ioEngngModel, bool iRecomputeStepAfterCrackProp);
+class Concrete3ViscReg : public Concrete3 {
+public:
+	Concrete3ViscReg(int n, Domain * d);
+	virtual ~Concrete3ViscReg();
 
     virtual IRResultType initializeFrom(InputRecord *ir);
+    virtual void giveInputRecord(DynamicInputRecord &input);
 
+    virtual const char *giveClassName() const { return "Concrete3ViscReg"; }
+    virtual const char *giveInputRecordName() const { return _IFT_Concrete3ViscReg_Name; }
+
+    virtual void giveMaterialStiffnessMatrix(FloatMatrix &answer, MatResponseMode,
+                                             GaussPoint *gp,
+                                             TimeStep *tStep);
+
+    virtual void giveRealStressVector(FloatArray &answer, GaussPoint *gp,
+                                      const FloatArray &reducedStrain, TimeStep *tStep);
 
 protected:
-    bool mNeedsVariableMapping;
-
-    bool mForceRemap;
+    double mRegCoeff;
 };
 
 } /* namespace oofem */
 
-#endif /* XFEMSOLVERINTERFACE_H_ */
+#endif /* SRC_SM_MATERIALS_CONCRETE3VISCREG_H_ */

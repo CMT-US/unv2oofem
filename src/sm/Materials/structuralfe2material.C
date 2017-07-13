@@ -78,6 +78,10 @@ StructuralFE2Material :: initializeFrom(InputRecord *ir)
 
     useNumTangent = ir->hasField(_IFT_StructuralFE2Material_useNumericalTangent);
 
+    mRegCoeff = 0.0;
+    IR_GIVE_OPTIONAL_FIELD(ir, mRegCoeff, _IFT_StructuralFE2Material_RegCoeff);
+    printf("mRegCoeff: %e\n", mRegCoeff );
+
     return StructuralMaterial :: initializeFrom(ir);
 }
 
@@ -91,6 +95,8 @@ StructuralFE2Material :: giveInputRecord(DynamicInputRecord &input)
     if ( useNumTangent ) {
         input.setField(_IFT_StructuralFE2Material_useNumericalTangent);
     }
+
+    input.setField(mRegCoeff, _IFT_StructuralFE2Material_RegCoeff);
 }
 
 
@@ -131,6 +137,41 @@ StructuralFE2Material :: giveRealStressVector_3d(FloatArray &answer, GaussPoint 
         StructuralMaterial::giveFullSymVectorForm(answer, stress, gp->giveMaterialMode() );
     }
 
+
+    ////////////////////////////////////////////////////////
+    // Viscous regularization
+
+	const FloatArray &oldStrain = ms->giveStrainVector();
+
+	FloatArray oldStrainFull = oldStrain;
+	if(oldStrainFull.giveSize() < 6) {
+		StructuralMaterial::giveFullSymVectorForm(oldStrainFull, oldStrain, gp->giveMaterialMode());
+	}
+
+	const FloatArray &newStrain = ms->giveTempStrainVector();
+	FloatArray newStrainFull = newStrain;
+	if(newStrainFull.giveSize() < 6) {
+		StructuralMaterial::giveFullSymVectorForm(newStrainFull, newStrain, gp->giveMaterialMode());
+	}
+
+	const double dt = tStep->giveTimeIncrement();
+//	printf("dt: %e\n", dt);
+
+	FloatArray strainRate;
+	strainRate.beDifferenceOf(newStrainFull, oldStrainFull);
+	strainRate.times(1./dt);
+
+
+	FloatArray strainRateFull = strainRate;
+	if(strainRate.giveSize() < answer.giveSize()) {
+		StructuralMaterial::giveFullSymVectorForm(strainRateFull, strainRate, gp->giveMaterialMode());
+	}
+
+	for( int i = 0;  i < answer.giveSize(); i++ ) {
+		answer(i) += (mRegCoeff)*strainRateFull(i);
+	}
+
+
     // Update the material status variables
     ms->letTempStressVectorBe(answer);
     ms->letTempStrainVectorBe(totalStrain);
@@ -144,7 +185,7 @@ StructuralFE2Material :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatR
     if ( useNumTangent ) {
         // Numerical tangent
         StructuralFE2MaterialStatus *status = static_cast<StructuralFE2MaterialStatus*>( this->giveStatus( gp ) );
-        double h = 1.0e-9;
+        double h = 1.0e-4;
 
         const FloatArray &epsRed = status->giveTempStrainVector();
         FloatArray eps;
@@ -174,6 +215,8 @@ StructuralFE2Material :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatR
                 answer.at(j,i) /= h;
             }
         }
+
+        status->setTangent(answer);
 
     } else {
 
@@ -211,6 +254,11 @@ StructuralFE2Material :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatR
 //            }
 //        }
 
+    	const double dt = tStep->giveTimeIncrement();
+
+    	for( int i = 0;  i < answer.giveNumberOfColumns(); i++ ) {
+    		answer(i,i) += (mRegCoeff/dt);
+    	}
 
 
 #if 0
@@ -401,10 +449,10 @@ void StructuralFE2MaterialStatus :: copyStateVariables(const MaterialStatus &iSt
     // However, this is a mess due to all pointers that need to be tracked.
     // Therefore, we consider a simplified version: copy only the enrichment items.
 
-    Domain *ext_domain = fe2ms->giveRVE()->giveDomain(1);
-    if ( ext_domain->hasXfemManager() ) {
+	Domain *ext_domain = fe2ms->giveRVE()->giveDomain(1);
+	Domain *rve_domain = rve->giveDomain(1);
 
-        Domain *rve_domain = rve->giveDomain(1);
+	if( ext_domain->hasXfemManager() ) {
 
         XfemManager *ext_xMan = ext_domain->giveXfemManager();
         XfemManager *this_xMan = rve->giveDomain(1)->giveXfemManager();
@@ -451,9 +499,20 @@ void StructuralFE2MaterialStatus :: copyStateVariables(const MaterialStatus &iSt
             rve->forceEquationNumbering();
         }
 
-    }
+	}
 
-    //printf("done.\n");
+	TimeStep *tStep = rve->giveCurrentStep();
+
+	// Update state in bulk GPs
+	for( auto &el : rve_domain->giveElements() ) {
+//		printf("Mapping bulk state variables in fe2ms.\n");
+		el->mapStateVariables(*ext_domain, *tStep);
+	}
+
+
+	// Update state in CZ elements
+
+//	printf("done.\n");
 
 #if 0
     Domain *newDomain = fe2ms->giveRVE()->giveDomain(1)->Clone();
