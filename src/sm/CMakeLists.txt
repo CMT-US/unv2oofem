@@ -198,6 +198,7 @@ set (sm_material
     Materials/RheoChainMaterials/mpsdammat.C
     Materials/RheoChainMaterials/eurocode2creep.C
     Materials/structuralfe2material.C
+    Materials/structuralfe2materialplanestress.C
     Materials/rcsd.C 
     Materials/rcsde.C 
     Materials/rcsdnl.C
