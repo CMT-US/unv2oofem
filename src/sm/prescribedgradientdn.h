@@ -32,104 +32,95 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef prescribedgradienthomogenization_h
-#define prescribedgradienthomogenization_h
+#ifndef prescribedgradientdn_h
+#define prescribedgradientdn_h
 
-#include "inputrecord.h"
+#include "prescribedgradienthomogenization.h"
+#include "boundarycondition.h"
+#include "dof.h"
+#include "bctype.h"
+#include "valuemodetype.h"
 #include "floatarray.h"
 #include "floatmatrix.h"
 #include "dofmanager.h"
 
-#include "error.h"
-
-///@name Input fields for PrescribedGradientHomogenization
+///@name Input fields for PrescribedGradientDN
 //@{
-#define _IFT_PrescribedGradientHomogenization_Name "prescribedgradient"
-#define _IFT_PrescribedGradientHomogenization_centercoords "ccoord"
-#define _IFT_PrescribedGradientHomogenization_gradient "gradient"
+#define _IFT_PrescribedGradientDN_Name "prescribedgradientdn"
+#define _IFT_PrescribedGradientDN_Thickness "thick"
+
 //@}
 
 namespace oofem {
-class TimeStep;
-class DynamicInputRecord;
-class Domain;
-
 /**
- * Class for homogenization of applied gradients.
- * This is typically applied to a boundary condition in multiscale analysis where @f$ d = \partial_x s@f$
+ * Prescribes a gradient as a Dirichlet-Neumann boundary condition, cf. Sciegaj et al. "Two-scale finite element
+ * modelling of reinforced concrete structures: effective response and sub-scale fracture development. Works with 2D RVEs 
+ * comprising solid elements (concrete) and reinforcement (beam elements). Useful in multi-scale analyses of reinforced concrete 
+ * structures.
  * 
- * @author Mikael Öhman
+ * @author Adam Sciegaj
  */
-class OOFEM_EXPORT PrescribedGradientHomogenization
+class OOFEM_EXPORT PrescribedGradientDN : public BoundaryCondition, public PrescribedGradientHomogenization
 {
-protected:
-    /// Prescribed gradient @f$ d_{ij} @f$
-    FloatMatrix mGradient;
-
-    /// Center coordinate @f$ \bar{x}_i @f$
-    FloatArray mCenterCoord;
-
-    virtual double domainSize(Domain *d, int set);
-
 public:
-    PrescribedGradientHomogenization() { }
-    virtual ~PrescribedGradientHomogenization() { }
+    /**
+     * Creates boundary condition with given number, belonging to given domain.
+     * @param n Boundary condition number.
+     * @param d Domain to which new object will belongs.
+     */
+    PrescribedGradientDN(int n, Domain *d) : BoundaryCondition(n, d) { }
 
-    virtual double domainSize() { OOFEM_ERROR("Not implemented."); return 0.0; }
+    /// Destructor
+    virtual ~PrescribedGradientDN() { }
+
+    virtual double give(Dof *dof, ValueModeType mode, double time);
+
+    virtual bcType giveType() const { return DirichletBT; }
 
     /**
      * Initializes receiver according to object description stored in input record.
      * The input record contains two fields;
      * - gradient \#rows \#columns { d_11 d_12 ... ; d_21 ... } (required)
      * - cCoords \#columns x_1 x_2 ... (optional, default 0)
-     * The prescribed gradients columns must be equal to the size of the center coordinates.
+     * The prescribed tensor's columns must be equal to the size of the center coordinates.
      * The size of the center coordinates must be equal to the size of the coordinates in the applied nodes.
      */
     virtual IRResultType initializeFrom(InputRecord *ir);
     virtual void giveInputRecord(DynamicInputRecord &input);
 
     /**
+     * Constructs a coefficient matrix for all prescribed unknowns.
+     * Helper routine for computational homogenization.
+     * @todo Perhaps this routine should only give results for the dof it prescribes?
+     * @param C Coefficient matrix to fill.
+     */
+    void updateCoefficientMatrix(FloatMatrix &C);
+
+    /**
      * Computes the homogenized, macroscopic, field (stress).
      * @param sigma Output quantity (typically stress).
      * @param tStep Active time step.
      */
-    virtual void computeField(FloatArray &sigma, TimeStep *tStep) = 0;
+    virtual void computeField(FloatArray &sigma, TimeStep *tStep);
 
     /**
      * Computes the macroscopic tangent for homogenization problems through sensitivity analysis.
      * @param tangent Output tangent.
      * @param tStep Active time step.
      */
-    virtual void computeTangent(FloatMatrix &tangent, TimeStep *tStep) = 0;
+    virtual void computeTangent(FloatMatrix &tangent, TimeStep *tStep);
 
-    /**
-     * Set prescribed gradient.
-     * @param t New prescribed gradient.
-     */
-    virtual void setPrescribedGradient(const FloatMatrix &t) { mGradient = t; }
+    virtual void scale(double s) { mGradient.times(s); }
 
+    virtual const char *giveClassName() const { return "PrescribedGradientDN"; }
+    virtual const char *giveInputRecordName() const { return _IFT_PrescribedGradientDN_Name; }
+    
+protected:
     /**
-     * Sets the prescribed gradient from the matrix from given voigt notation.
-     * Assumes use of double values for off-diagonal, usually the way for strain in Voigt form.
-     * @param t Vector in voigt format.
+     * Thickness of the RVE
      */
-    virtual void setPrescribedGradientVoigt(const FloatArray &t);
-    /**
-     * Gives back the applied gradient in Voigt form.
-     * @param oGradient The applied gradient, in Voigt form.
-     */
-    void giveGradientVoigt(FloatArray &oGradient) const;
-
-    /**
-     * Set the center coordinate for the prescribed values to be set for.
-     * @param x Center coordinate.
-     */
-    virtual void setCenterCoordinate(FloatArray &x) { mCenterCoord = x; }
-    /// Returns the center coordinate
-    FloatArray &giveCenterCoordinate() { return mCenterCoord; }
-
-    virtual const char *giveClassName() const = 0;
+    double thick;
 };
 } // end namespace oofem
 
-#endif // prescribedgradienthomogenization_h
+#endif // prescribedgradient_h

@@ -90,6 +90,8 @@ public:
     {
         this->giveInterfaceCrossSection()->give2dStiffnessMatrix_Eng(answer, rMode, ip, tStep);
     }
+    
+    virtual bool isCast(TimeStep *tStep) {return true;}
 
     #ifdef __OOFEG
     virtual void drawRawGeometry(oofegGraphicContext &gc, TimeStep *tStep);

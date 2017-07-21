@@ -41,6 +41,8 @@
 #include "intarray.h"
 #include "error.h"
 #include "bctracker.h"
+#include "floatarray.h"
+
 #ifdef __PARALLEL_MODE
  #include "entityrenumberingscheme.h"
 #endif
@@ -583,6 +585,9 @@ public:
      * @return Total volume.
      */
     double giveSize();
+
+    void computeDomainBoundingBox(FloatArray &oLC, FloatArray &oUC);
+
 
     /**
      * Gives the next free dof ID.

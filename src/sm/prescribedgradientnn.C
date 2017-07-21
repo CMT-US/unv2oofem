@@ -32,7 +32,7 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "prescribedgradientbcneumann.h"
+#include "prescribedgradientnn.h"
 #include "classfactory.h"
 #include "node.h"
 #include "masterdof.h"
@@ -49,11 +49,12 @@
 #include "unknownnumberingscheme.h"
 #include "engngm.h"
 #include "mathfem.h"
+#include "dynamicinputrecord.h"
 
 namespace oofem {
-REGISTER_BoundaryCondition(PrescribedGradientBCNeumann);
+REGISTER_BoundaryCondition(PrescribedGradientNN);
 
-PrescribedGradientBCNeumann :: PrescribedGradientBCNeumann(int n, Domain *d) :
+PrescribedGradientNN :: PrescribedGradientNN(int n, Domain *d) :
     ActiveBoundaryCondition(n, d),
     PrescribedGradientHomogenization(),
     mpSigmaHom( new Node(0, d) )
@@ -67,36 +68,39 @@ PrescribedGradientBCNeumann :: PrescribedGradientBCNeumann(int n, Domain *d) :
     }
 }
 
-PrescribedGradientBCNeumann :: ~PrescribedGradientBCNeumann()
+PrescribedGradientNN :: ~PrescribedGradientNN()
 {
 }
 
 
-IRResultType PrescribedGradientBCNeumann :: initializeFrom(InputRecord *ir)
+IRResultType PrescribedGradientNN :: initializeFrom(InputRecord *ir)
 {
+    IRResultType result;
     ActiveBoundaryCondition :: initializeFrom(ir);
+    IR_GIVE_FIELD(ir, thick , _IFT_PrescribedGradientNN_Thickness);
     return PrescribedGradientHomogenization :: initializeFrom(ir);
 }
 
 
-void PrescribedGradientBCNeumann :: giveInputRecord(DynamicInputRecord &input)
+void PrescribedGradientNN :: giveInputRecord(DynamicInputRecord &input)
 {
     ActiveBoundaryCondition :: giveInputRecord(input);
+    input.setField(thick, _IFT_PrescribedGradientNN_Thickness);
     PrescribedGradientHomogenization :: giveInputRecord(input);
 }
 
 
-DofManager *PrescribedGradientBCNeumann :: giveInternalDofManager(int i)
+DofManager *PrescribedGradientNN :: giveInternalDofManager(int i)
 {
     return mpSigmaHom.get();
 }
 
-void PrescribedGradientBCNeumann :: scale(double s)
+void PrescribedGradientNN :: scale(double s)
 {
     this->mGradient.times(s);
 }
 
-void PrescribedGradientBCNeumann :: assembleVector(FloatArray &answer, TimeStep *tStep,
+void PrescribedGradientNN :: assembleVector(FloatArray &answer, TimeStep *tStep,
                                                    CharType type, ValueModeType mode,
                                                    const UnknownNumberingScheme &s, FloatArray *eNorm)
 {
@@ -160,7 +164,7 @@ void PrescribedGradientBCNeumann :: assembleVector(FloatArray &answer, TimeStep 
     }
 }
 
-void PrescribedGradientBCNeumann :: assemble(SparseMtrx &answer, TimeStep *tStep,
+void PrescribedGradientNN :: assemble(SparseMtrx &answer, TimeStep *tStep,
                                              CharType type, const UnknownNumberingScheme &r_s, const UnknownNumberingScheme &c_s, double scale)
 {
     if ( type == TangentStiffnessMatrix || type == SecantStiffnessMatrix || type == ElasticStiffnessMatrix ) {
@@ -194,11 +198,11 @@ void PrescribedGradientBCNeumann :: assemble(SparseMtrx &answer, TimeStep *tStep
             answer.assemble(loc_r, sigma_loc_c, KeT); // Contributions to delta_v equations
         }
     } else   {
-        OOFEM_LOG_DEBUG("Skipping assembly in PrescribedGradientBCNeumann::assemble().");
+        OOFEM_LOG_DEBUG("Skipping assembly in PrescribedGradientNN::assemble().");
     }
 }
 
-void PrescribedGradientBCNeumann :: giveLocationArrays(std :: vector< IntArray > &rows, std :: vector< IntArray > &cols, CharType type,
+void PrescribedGradientNN :: giveLocationArrays(std :: vector< IntArray > &rows, std :: vector< IntArray > &cols, CharType type,
                                                        const UnknownNumberingScheme &r_s, const UnknownNumberingScheme &c_s)
 {
     IntArray loc_r, loc_c, sigma_loc_r, sigma_loc_c;
@@ -235,13 +239,14 @@ void PrescribedGradientBCNeumann :: giveLocationArrays(std :: vector< IntArray >
     }
 }
 
-void PrescribedGradientBCNeumann :: computeField(FloatArray &sigma, TimeStep *tStep)
+void PrescribedGradientNN :: computeField(FloatArray &sigma, TimeStep *tStep)
 {
     mpSigmaHom->giveUnknownVector(sigma, mSigmaIds, VM_Total, tStep);
+    sigma.times(1/thick);
 }
 
 
-void PrescribedGradientBCNeumann :: computeTangent(FloatMatrix &tangent, TimeStep *tStep)
+void PrescribedGradientNN :: computeTangent(FloatMatrix &tangent, TimeStep *tStep)
 {
     EngngModel *rve = this->giveDomain()->giveEngngModel();
     ///@todo Get this from engineering model
@@ -305,12 +310,12 @@ void PrescribedGradientBCNeumann :: computeTangent(FloatMatrix &tangent, TimeSte
 }
 
 
-void PrescribedGradientBCNeumann :: giveStressLocationArray(IntArray &oCols, const UnknownNumberingScheme &r_s)
+void PrescribedGradientNN :: giveStressLocationArray(IntArray &oCols, const UnknownNumberingScheme &r_s)
 {
     mpSigmaHom->giveLocationArray(mSigmaIds, oCols, r_s);
 }
 
-void PrescribedGradientBCNeumann :: integrateTangent(FloatMatrix &oTangent, Element *e, int iBndIndex)
+void PrescribedGradientNN :: integrateTangent(FloatMatrix &oTangent, Element *e, int iBndIndex)
 {
     FloatArray normal, n;
     FloatMatrix nMatrix, E_n;

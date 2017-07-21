@@ -32,7 +32,7 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "structuralfe2material.h"
+#include "structuralfe2materialplanestress.h"
 #include "gausspoint.h"
 #include "engngm.h"
 #include "oofemtxtdatareader.h"
@@ -58,67 +58,84 @@
 #include <sstream>
 
 namespace oofem {
-REGISTER_Material(StructuralFE2Material);
+REGISTER_Material(StructuralFE2MaterialPlaneStress);
 
-int StructuralFE2Material :: n = 1;
+int StructuralFE2MaterialPlaneStress :: n = 1;
 
-StructuralFE2Material :: StructuralFE2Material(int n, Domain *d) : StructuralMaterial(n, d),
+StructuralFE2MaterialPlaneStress :: StructuralFE2MaterialPlaneStress(int n, Domain *d) : StructuralMaterial(n, d),
 useNumTangent(true)
 {}
 
-StructuralFE2Material :: ~StructuralFE2Material()
+StructuralFE2MaterialPlaneStress :: ~StructuralFE2MaterialPlaneStress()
 {}
 
 
 IRResultType
-StructuralFE2Material :: initializeFrom(InputRecord *ir)
+StructuralFE2MaterialPlaneStress :: initializeFrom(InputRecord *ir)
 {
     IRResultType result;                 // Required by IR_GIVE_FIELD macro
-    IR_GIVE_FIELD(ir, this->inputfile, _IFT_StructuralFE2Material_fileName);
+    IR_GIVE_FIELD(ir, this->inputfile, _IFT_StructuralFE2MaterialPlaneStress_fileName);
 
-    useNumTangent = ir->hasField(_IFT_StructuralFE2Material_useNumericalTangent);
+    useNumTangent = ir->hasField(_IFT_StructuralFE2MaterialPlaneStress_useNumericalTangent);
 
     mRegCoeff = 0.0;
-    IR_GIVE_OPTIONAL_FIELD(ir, mRegCoeff, _IFT_StructuralFE2Material_RegCoeff);
+    IR_GIVE_OPTIONAL_FIELD(ir, mRegCoeff, _IFT_StructuralFE2MaterialPlaneStress_RegCoeff);
     printf("mRegCoeff: %e\n", mRegCoeff );
+
+    useExtStiff = ir->hasField(_IFT_StructuralFE2MaterialPlaneStress_useExternalStiffness);
+    IR_GIVE_OPTIONAL_FIELD(ir, givenTangent, _IFT_StructuralFE2MaterialPlaneStress_useExternalStiffness);
+
+    allGPRes = ir->hasField(_IFT_StructuralFE2MaterialPlaneStress_allGPResults);
 
     return StructuralMaterial :: initializeFrom(ir);
 }
 
 
 void
-StructuralFE2Material :: giveInputRecord(DynamicInputRecord &input)
+StructuralFE2MaterialPlaneStress :: giveInputRecord(DynamicInputRecord &input)
 {
     StructuralMaterial :: giveInputRecord(input);
-    input.setField(this->inputfile, _IFT_StructuralFE2Material_fileName);
+    input.setField(this->inputfile, _IFT_StructuralFE2MaterialPlaneStress_fileName);
 
     if ( useNumTangent ) {
-        input.setField(_IFT_StructuralFE2Material_useNumericalTangent);
+        input.setField(_IFT_StructuralFE2MaterialPlaneStress_useNumericalTangent);
     }
 
-    input.setField(mRegCoeff, _IFT_StructuralFE2Material_RegCoeff);
+    if ( useExtStiff ) {
+        input.setField(_IFT_StructuralFE2MaterialPlaneStress_useExternalStiffness);
+        input.setField(givenTangent, _IFT_StructuralFE2MaterialPlaneStress_useExternalStiffness);
+    }
+
+    input.setField(mRegCoeff, _IFT_StructuralFE2MaterialPlaneStress_RegCoeff);
+    input.setField(allGPRes, _IFT_StructuralFE2MaterialPlaneStress_allGPResults);
 }
 
 
 MaterialStatus *
-StructuralFE2Material :: CreateStatus(GaussPoint *gp) const
+StructuralFE2MaterialPlaneStress :: CreateStatus(GaussPoint *gp) const
 {
-    return new StructuralFE2MaterialStatus(1, this->giveDomain(), gp, this->inputfile);
+    if ( allGPRes ) {
+        int nel = gp->giveElement()->giveGlobalNumber();
+        int gpn = gp->giveNumber();
+        return new StructuralFE2MaterialPlaneStressStatus(gpn, nel, this->giveDomain(), gp, this->inputfile);
+    } else {
+        return new StructuralFE2MaterialPlaneStressStatus(1, 1, this->giveDomain(), gp, this->inputfile);
+    }
 }
 
 
 void
-StructuralFE2Material :: giveRealStressVector_3d(FloatArray &answer, GaussPoint *gp,
+StructuralFE2MaterialPlaneStress :: giveRealStressVector_3d(FloatArray &answer, GaussPoint *gp,
                                  const FloatArray &totalStrain, TimeStep *tStep)
 {
     FloatArray stress;
-    StructuralFE2MaterialStatus *ms = static_cast< StructuralFE2MaterialStatus * >( this->giveStatus(gp) );
+    StructuralFE2MaterialPlaneStressStatus *ms = static_cast< StructuralFE2MaterialPlaneStressStatus * >( this->giveStatus(gp) );
 
 #if 0
-    XfemStructureManager *xMan = dynamic_cast<XfemStructureManager*>( ms->giveRVE()->giveDomain(1)->giveXfemManager() );
-    if(xMan) {
-        printf("Total crack length in RVE: %e\n", xMan->computeTotalCrackLength() );
-    }
+	XfemStructureManager *xMan = dynamic_cast<XfemStructureManager*>( ms->giveRVE()->giveDomain(1)->giveXfemManager() );
+	if(xMan) {
+		printf("Total crack length in RVE: %e\n", xMan->computeTotalCrackLength() );
+	}
 #endif
 
     ms->setTimeStep(tStep);
@@ -129,10 +146,8 @@ StructuralFE2Material :: giveRealStressVector_3d(FloatArray &answer, GaussPoint 
     // Post-process the stress
     ms->giveBC()->computeField(stress, tStep);
 
-    if ( stress.giveSize() == 6 ) {
-        answer = stress;
-    } if ( stress.giveSize() == 9 ) {
-        answer = {stress[0], stress[1], stress[2], 0.5*(stress[3]+stress[6]), 0.5*(stress[4]+stress[7]), 0.5*(stress[5]+stress[8])};
+    if (stress.giveSize() == 4 ) {
+        answer = {stress[0], stress[1], 0.5*(stress[2]+stress[3])};
     } else {
         StructuralMaterial::giveFullSymVectorForm(answer, stress, gp->giveMaterialMode() );
     }
@@ -178,21 +193,29 @@ StructuralFE2Material :: giveRealStressVector_3d(FloatArray &answer, GaussPoint 
     ms->markOldTangent(); // Mark this so that tangent is reevaluated if they are needed.
 }
 
+void StructuralFE2MaterialPlaneStress :: giveRealStressVector_StressControl(FloatArray &answer, GaussPoint *gp, const FloatArray &reducedStrain, const IntArray &strainControl, TimeStep *tStep)
+{
+    this->giveRealStressVector_3d(answer, gp, reducedStrain, tStep);
+
+    return;
+}
 
 void
-StructuralFE2Material :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
+StructuralFE2MaterialPlaneStress :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
 {
     if ( useNumTangent ) {
         // Numerical tangent
-        StructuralFE2MaterialStatus *status = static_cast<StructuralFE2MaterialStatus*>( this->giveStatus( gp ) );
-        double h = 1.0e-4;
+        StructuralFE2MaterialPlaneStressStatus *status = static_cast<StructuralFE2MaterialPlaneStressStatus*>( this->giveStatus( gp ) );
+        double h = 1.0e-9;
 
         const FloatArray &epsRed = status->giveTempStrainVector();
         FloatArray eps;
-        StructuralMaterial::giveFullSymVectorForm(eps, epsRed, gp->giveMaterialMode() );
+        //StructuralMaterial::giveFullSymVectorForm(eps, epsRed, gp->giveMaterialMode() );
 
 
-        int dim = eps.giveSize();
+//         int dim = eps.giveSize();
+        int dim = epsRed.giveSize();
+        eps.resize(dim);
         answer.resize(dim, dim);
         answer.zero();
 
@@ -218,9 +241,16 @@ StructuralFE2Material :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatR
 
         status->setTangent(answer);
 
+    } else if ( useExtStiff ) {
+
+        StructuralFE2MaterialPlaneStressStatus *ms = static_cast< StructuralFE2MaterialPlaneStressStatus * >( this->giveStatus(gp) );
+        answer = this->givenTangent;
+
+        ms->setTangent(answer);
+
     } else {
 
-        StructuralFE2MaterialStatus *ms = static_cast< StructuralFE2MaterialStatus * >( this->giveStatus(gp) );
+        StructuralFE2MaterialPlaneStressStatus *ms = static_cast< StructuralFE2MaterialPlaneStressStatus * >( this->giveStatus(gp) );
         ms->computeTangent(tStep);
         const FloatMatrix &ans9 = ms->giveTangent();
 
@@ -293,33 +323,35 @@ StructuralFE2Material :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatR
     }
 }
 
-
+void StructuralFE2MaterialPlaneStress :: givePlaneStressStiffMtrx(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
+{
+    this->give3dMaterialStiffnessMatrix(answer, mode, gp, tStep);
+}
 //=============================================================================
 
-
-StructuralFE2MaterialStatus :: StructuralFE2MaterialStatus(int n, Domain * d, GaussPoint * g,  const std :: string & inputfile) :
+StructuralFE2MaterialPlaneStressStatus :: StructuralFE2MaterialPlaneStressStatus(int n, int j, Domain * d, GaussPoint * g,  const std :: string & inputfile) :
 StructuralMaterialStatus(n, d, g),
 mNewlyInitialized(true)
 {
-    mInputFile = inputfile;
+	mInputFile = inputfile;
 
     this->oldTangent = true;
 
-    if ( !this->createRVE(n, gp, inputfile) ) {
+    if ( !this->createRVE(n, j, gp, inputfile) ) {
         OOFEM_ERROR("Couldn't create RVE");
     }
 
 }
 
-PrescribedGradientHomogenization* StructuralFE2MaterialStatus::giveBC()
+PrescribedGradientHomogenization* StructuralFE2MaterialPlaneStressStatus::giveBC()
 {
-    this->bc = dynamic_cast< PrescribedGradientHomogenization * >( this->rve->giveDomain(1)->giveBc(1) );
-    return this->bc;
+	this->bc = dynamic_cast< PrescribedGradientHomogenization * >( this->rve->giveDomain(1)->giveBc(1) );
+	return this->bc;
 }
 
 
 bool
-StructuralFE2MaterialStatus :: createRVE(int n, GaussPoint *gp, const std :: string &inputfile)
+StructuralFE2MaterialPlaneStressStatus :: createRVE(int n, int j, GaussPoint *gp, const std :: string &inputfile)
 {
     OOFEMTXTDataReader dr( inputfile.c_str() );
     EngngModel *em = InstanciateProblem(& dr, _processor, 0); // Everything but nrsolver is updated.
@@ -333,7 +365,7 @@ StructuralFE2MaterialStatus :: createRVE(int n, GaussPoint *gp, const std :: str
     this->rve.reset( em );
 
     std :: ostringstream name;
-    name << this->rve->giveOutputBaseFileName() << "-gp" << n;
+    name << this->rve->giveOutputBaseFileName() << "-gp" << n << "-el" << j;
     if ( this->domain->giveEngngModel()->isParallel() && this->domain->giveEngngModel()->giveNumberOfProcesses() > 1 ) {
         name << "." << this->domain->giveEngngModel()->giveRank();
     }
@@ -349,7 +381,7 @@ StructuralFE2MaterialStatus :: createRVE(int n, GaussPoint *gp, const std :: str
 }
 
 void
-StructuralFE2MaterialStatus :: setTimeStep(TimeStep *tStep)
+StructuralFE2MaterialPlaneStressStatus :: setTimeStep(TimeStep *tStep)
 {
     TimeStep *rveTStep = this->rve->giveCurrentStep(); // Should i create a new one if it is empty?
     rveTStep->setNumber( tStep->giveNumber() );
@@ -358,16 +390,16 @@ StructuralFE2MaterialStatus :: setTimeStep(TimeStep *tStep)
 }
 
 void
-StructuralFE2MaterialStatus :: initTempStatus()
+StructuralFE2MaterialPlaneStressStatus :: initTempStatus()
 {
     StructuralMaterialStatus :: initTempStatus();
 }
 
 void
-StructuralFE2MaterialStatus :: markOldTangent() { this->oldTangent = true; }
+StructuralFE2MaterialPlaneStressStatus :: markOldTangent() { this->oldTangent = true; }
 
 void
-StructuralFE2MaterialStatus :: computeTangent(TimeStep *tStep)
+StructuralFE2MaterialPlaneStressStatus :: computeTangent(TimeStep *tStep)
 {
     if ( !tStep->isTheCurrentTimeStep() ) {
         OOFEM_ERROR("Only current timestep supported.");
@@ -381,7 +413,7 @@ StructuralFE2MaterialStatus :: computeTangent(TimeStep *tStep)
 }
 
 void 
-StructuralFE2MaterialStatus :: updateYourself(TimeStep *tStep)
+StructuralFE2MaterialPlaneStressStatus :: updateYourself(TimeStep *tStep)
 {
     StructuralMaterialStatus :: updateYourself(tStep);
     this->rve->updateYourself(tStep);
@@ -392,10 +424,10 @@ StructuralFE2MaterialStatus :: updateYourself(TimeStep *tStep)
 
 
 contextIOResultType
-StructuralFE2MaterialStatus :: saveContext(DataStream &stream, ContextMode mode, void *obj)
+StructuralFE2MaterialPlaneStressStatus :: saveContext(DataStream &stream, ContextMode mode, void *obj)
 {
     contextIOResultType iores;
-    if ( ( iores = StructuralMaterialStatus :: saveContext(stream, mode, obj) ) != CIO_OK ) {
+    if ( ( iores = StructuralFE2MaterialPlaneStressStatus :: saveContext(stream, mode, obj) ) != CIO_OK ) {
         THROW_CIOERR(iores);
     }
 
@@ -404,25 +436,26 @@ StructuralFE2MaterialStatus :: saveContext(DataStream &stream, ContextMode mode,
 
 
 contextIOResultType
-StructuralFE2MaterialStatus :: restoreContext(DataStream &stream, ContextMode mode, void *obj)
+StructuralFE2MaterialPlaneStressStatus :: restoreContext(DataStream &stream, ContextMode mode, void *obj)
 {
     contextIOResultType iores;
-    if ( ( iores = StructuralMaterialStatus :: restoreContext(stream, mode, obj) ) != CIO_OK ) {
+    if ( ( iores = StructuralFE2MaterialPlaneStressStatus :: restoreContext(stream, mode, obj) ) != CIO_OK ) {
         THROW_CIOERR(iores);
     }
 
     return this->rve->restoreContext(stream, mode);
 }
 
-double StructuralFE2MaterialStatus :: giveRveLength()
+double StructuralFE2MaterialPlaneStressStatus :: giveRveLength()
 {
-    return sqrt( bc->domainSize() );
+	double rveLength = sqrt( bc->domainSize() );
+	return rveLength;
 }
 
-void StructuralFE2MaterialStatus :: copyStateVariables(const MaterialStatus &iStatus)
+void StructuralFE2MaterialPlaneStressStatus :: copyStateVariables(const MaterialStatus &iStatus)
 {
-    //static int num = 0;
-    //printf("Entering StructuralFE2MaterialStatus :: copyStateVariables.\n");
+//	static int num = 0;
+//	printf("Entering StructuralFE2MaterialPlaneStressStatus :: copyStateVariables.\n");
 
     this->oldTangent = true;
 
@@ -431,73 +464,75 @@ void StructuralFE2MaterialStatus :: copyStateVariables(const MaterialStatus &iSt
 //    }
 
 
-    StructuralMaterialStatus :: copyStateVariables(iStatus);
+	StructuralMaterialStatus::copyStateVariables(iStatus);
 
 
-    //////////////////////////////
-    MaterialStatus &tmpStat = const_cast< MaterialStatus & >(iStatus);
-    StructuralFE2MaterialStatus *fe2ms = dynamic_cast<StructuralFE2MaterialStatus*>(&tmpStat);
+	//////////////////////////////
+	MaterialStatus &tmpStat = const_cast< MaterialStatus & >(iStatus);
+	StructuralFE2MaterialPlaneStressStatus *fe2ms = dynamic_cast<StructuralFE2MaterialPlaneStressStatus*>(&tmpStat);
 
-    if ( !fe2ms ) {
-        OOFEM_ERROR("Failed to cast StructuralFE2MaterialStatus.")
-    }
+	if(!fe2ms) {
+		OOFEM_ERROR("Failed to cast StructuralFE2MaterialPlaneStressStatus.")
+	}
 
 
-    this->mNewlyInitialized = fe2ms->mNewlyInitialized;
+	this->mNewlyInitialized = fe2ms->mNewlyInitialized;
 
-    // The proper way to do this would be to clone the RVE from iStatus.
-    // However, this is a mess due to all pointers that need to be tracked.
-    // Therefore, we consider a simplified version: copy only the enrichment items.
+	// The proper way to do this would be to clone the RVE from iStatus.
+	// However, this is a mess due to all pointers that need to be tracked.
+	// Therefore, we consider a simplified version: copy only the enrichment items.
 
 	Domain *ext_domain = fe2ms->giveRVE()->giveDomain(1);
 	Domain *rve_domain = rve->giveDomain(1);
 
 	if( ext_domain->hasXfemManager() ) {
 
-        XfemManager *ext_xMan = ext_domain->giveXfemManager();
-        XfemManager *this_xMan = rve->giveDomain(1)->giveXfemManager();
-        DynamicDataReader dataReader;
-        if ( ext_xMan != NULL ) {
 
-            IRResultType result; // Required by IR_GIVE_FIELD macro
-            std::vector<std::unique_ptr<EnrichmentItem>> eiList;
+		XfemManager *ext_xMan = ext_domain->giveXfemManager();
+		XfemManager *this_xMan = rve->giveDomain(1)->giveXfemManager();
+		DynamicDataReader dataReader;
+		if ( ext_xMan != NULL ) {
 
-            //DynamicInputRecord *xmanRec = new DynamicInputRecord();
-            //ext_xMan->giveInputRecord(* xmanRec);
-            //dataReader.insertInputRecord(DataReader :: IR_xfemManRec, xmanRec);
+		    IRResultType result; // Required by IR_GIVE_FIELD macro
+			std::vector<std::unique_ptr<EnrichmentItem>> eiList;
 
-            // Enrichment items
-            int nEI = ext_xMan->giveNumberOfEnrichmentItems();
-            for ( int i = 1; i <= nEI; i++ ) {
-                EnrichmentItem *ext_ei = ext_xMan->giveEnrichmentItem(i);
-                ext_ei->appendInputRecords(dataReader);
+//			DynamicInputRecord *xmanRec = new DynamicInputRecord();
+//			ext_xMan->giveInputRecord(* xmanRec);
+//			dataReader.insertInputRecord(DataReader :: IR_xfemManRec, xmanRec);
+
+			// Enrichment items
+			int nEI = ext_xMan->giveNumberOfEnrichmentItems();
+			for ( int i = 1; i <= nEI; i++ ) {
+				EnrichmentItem *ext_ei = ext_xMan->giveEnrichmentItem(i);
+				ext_ei->appendInputRecords(dataReader);
 
 
-                InputRecord *mir = dataReader.giveInputRecord(DataReader :: IR_enrichItemRec, i);
-                std :: string name;
-                result = mir->giveRecordKeywordField(name);
+		        InputRecord *mir = dataReader.giveInputRecord(DataReader :: IR_enrichItemRec, i);
+		        std :: string name;
+		        result = mir->giveRecordKeywordField(name);
 
-                if ( result != IRRT_OK ) {
-                    mir->report_error(this->giveClassName(), __func__, "", result, __FILE__, __LINE__);
-                }
+		        if ( result != IRRT_OK ) {
+		            mir->report_error(this->giveClassName(), __func__, "", result, __FILE__, __LINE__);
+		        }
 
-                std :: unique_ptr< EnrichmentItem >ei( classFactory.createEnrichmentItem( name.c_str(), i, this_xMan, rve_domain ) );
-                if ( ei.get() == NULL ) {
-                    OOFEM_ERROR( "unknown enrichment item (%s)", name.c_str() );
-                }
+		        std :: unique_ptr< EnrichmentItem >ei( classFactory.createEnrichmentItem( name.c_str(), i, this_xMan, rve_domain ) );
+		        if ( ei.get() == NULL ) {
+		            OOFEM_ERROR( "unknown enrichment item (%s)", name.c_str() );
+		        }
 
-                ei->initializeFrom(mir);
-                ei->instanciateYourself(&dataReader);
-                eiList.push_back( std :: move(ei) );
+		        ei->initializeFrom(mir);
+		        ei->instanciateYourself(&dataReader);
+		        eiList.push_back( std :: move(ei) );
 
-            }
+			}
 
-            this_xMan->clearEnrichmentItems();
-            this_xMan->appendEnrichmentItems(eiList);
+			this_xMan->clearEnrichmentItems();
+			this_xMan->appendEnrichmentItems(eiList);
 
-            rve_domain->postInitialize();
-            rve->forceEquationNumbering();
-        }
+			rve_domain->postInitialize();
+			rve->forceEquationNumbering();
+		}
+
 
 	}
 
@@ -515,18 +550,18 @@ void StructuralFE2MaterialStatus :: copyStateVariables(const MaterialStatus &iSt
 //	printf("done.\n");
 
 #if 0
-    Domain *newDomain = fe2ms->giveRVE()->giveDomain(1)->Clone();
-    newDomain->SetEngngModel(rve.get());
-    bool deallocateOld = true;
-    rve->setDomain(1, newDomain, deallocateOld);
+	Domain *newDomain = fe2ms->giveRVE()->giveDomain(1)->Clone();
+	newDomain->SetEngngModel(rve.get());
+	bool deallocateOld = true;
+	rve->setDomain(1, newDomain, deallocateOld);
 
-    //rve->giveDomain(1)->postInitialize();
-    rve->giveNumericalMethod(NULL)->setDomain(newDomain);
+//	rve->giveDomain(1)->postInitialize();
+	rve->giveNumericalMethod(NULL)->setDomain(newDomain);
 
-    rve->postInitialize();
-    //rve->forceEquationNumbering();
+	rve->postInitialize();
+//	rve->forceEquationNumbering();
 
-    rve->initMetaStepAttributes( rve->giveMetaStep(1) );
+	rve->initMetaStepAttributes( rve->giveMetaStep(1) );
     rve->giveNextStep(); // Makes sure there is a timestep (which we will modify before solving a step)
     rve->init();
 
@@ -538,8 +573,8 @@ void StructuralFE2MaterialStatus :: copyStateVariables(const MaterialStatus &iSt
 
     double crackLength = 0.0;
     XfemStructureManager *xMan = dynamic_cast<XfemStructureManager*>( rve->giveDomain(1)->giveXfemManager() );
-    if ( xMan ) {
-        crackLength = xMan->computeTotalCrackLength();
+    if(xMan) {
+    	crackLength = xMan->computeTotalCrackLength();
     }
 
     std :: ostringstream name;
@@ -553,35 +588,36 @@ void StructuralFE2MaterialStatus :: copyStateVariables(const MaterialStatus &iSt
     this->rve->letOutputBaseFileNameBe( name.str() );
 
 
-    // Update BC
-    this->bc = dynamic_cast< PrescribedGradientHomogenization * >( this->rve->giveDomain(1)->giveBc(1) );
+	// Update BC
+	this->bc = dynamic_cast< PrescribedGradientHomogenization * >( this->rve->giveDomain(1)->giveBc(1) );
 
 #if 1
 
     XfemSolverInterface *xfemSolInt = dynamic_cast<XfemSolverInterface*>(rve.get());
     StaticStructural *statStruct = dynamic_cast<StaticStructural*>(rve.get());
-    if ( xfemSolInt && statStruct ) {
-        //printf("Successfully casted to XfemSolverInterface.\n");
+    if(xfemSolInt && statStruct) {
+//    	printf("Successfully casted to XfemSolverInterface.\n");
 
-        TimeStep *tStep = rve->giveCurrentStep();
+    	TimeStep *tStep = rve->giveCurrentStep();
 
-        EModelDefaultEquationNumbering num;
-        int numDofsNew = rve->giveNumberOfDomainEquations( 1, num );
-        FloatArray u;
-        u.resize(numDofsNew);
-        u.zero();
+		EModelDefaultEquationNumbering num;
+		int numDofsNew = rve->giveNumberOfDomainEquations( 1, num );
+		FloatArray u;
+		u.resize(numDofsNew);
+		u.zero();
 
-        xfemSolInt->xfemUpdatePrimaryField(*statStruct, tStep, u);
+		xfemSolInt->xfemUpdatePrimaryField(*statStruct, tStep, u);
 
-        // Set domain pointer to various components ...
-        rve->giveNumericalMethod(NULL)->setDomain(newDomain);
-        //ioEngngModel.nMethod->setDomain(domain);
+	    // Set domain pointer to various components ...
+		rve->giveNumericalMethod(NULL)->setDomain(newDomain);
+	//        ioEngngModel.nMethod->setDomain(domain);
 
     }
 
 //    TimeStep *tStep = rve->giveNextStep();
 //    setTimeStep(tStep);
 //    rve->solveYourselfAt(tStep);
+
 
 
     int numExpModules = rve->giveExportModuleManager()->giveNumberOfModules();

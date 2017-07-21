@@ -123,6 +123,17 @@ bool XfemManager :: isElementEnriched(const Element *elem)
     return false;
 }
 
+bool XfemManager :: isAllElementNodesEnriched(const Element *elem)
+{
+    for ( int n: elem->giveDofManArray() ) {
+        if ( mNodeEnrichmentItemIndices [ n - 1 ].size() == 0 ) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void
 XfemManager :: createEnrichedDofs()
 {

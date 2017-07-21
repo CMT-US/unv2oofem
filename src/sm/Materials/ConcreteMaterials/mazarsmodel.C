@@ -440,6 +440,11 @@ double MazarsMaterial :: computeGc(double kappa, GaussPoint *gp)
     return 0.; // just to make the compiler happy
 }
 
+double MazarsMaterial :: damageFunctionPrime(double kappa, GaussPoint *gp)
+{
+ return 0.0;
+}
+
 void
 MazarsMaterial :: initDamaged(double kappa, FloatArray &totalStrainVector, GaussPoint *gp)
 {

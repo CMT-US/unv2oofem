@@ -749,7 +749,7 @@ void FloatArray :: printYourself() const
 {
     printf("FloatArray of size : %d \n", this->giveSize());
     for ( double x: *this ) {
-        printf( "%10.3e  ", x );
+        printf( "%10.6e  ", x );
     }
 
     printf("\n");

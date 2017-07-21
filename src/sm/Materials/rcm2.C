@@ -1253,4 +1253,43 @@ RCM2MaterialStatus :: restoreContext(DataStream &stream, ContextMode mode, void 
 
     return CIO_OK; // return succes
 }
+
+void RCM2MaterialStatus :: copyStateVariables(const MaterialStatus &iStatus)
+{
+//	printf("Entering RCM2MaterialStatus :: copyStateVariables().\n");
+
+	StructuralMaterialStatus::copyStateVariables(iStatus);
+
+    MaterialStatus &tmpStat = const_cast< MaterialStatus & >(iStatus);
+    const RCM2MaterialStatus &rcm2Status = dynamic_cast< RCM2MaterialStatus & >(tmpStat);
+
+    crackStatuses 		= rcm2Status.crackStatuses;
+    tempCrackStatuses 	= rcm2Status.tempCrackStatuses;
+
+    maxCrackStrains 	= rcm2Status.maxCrackStrains;
+    tempMaxCrackStrains	= rcm2Status.tempMaxCrackStrains;
+
+    crackStrainVector	= rcm2Status.crackStrainVector;
+    oldCrackStrainVector= rcm2Status.oldCrackStrainVector;
+
+    crackDirs			= rcm2Status.crackDirs;
+    tempCrackDirs		= rcm2Status.tempCrackDirs;
+
+    charLengths			= rcm2Status.charLengths;
+
+    principalStrain		= rcm2Status.principalStrain;
+    oldPrincipalStrain	= rcm2Status.oldPrincipalStrain;
+
+    principalStress		= rcm2Status.principalStress;
+    oldPrincipalStress	= rcm2Status.oldPrincipalStress;
+
+    crackMap			= rcm2Status.crackMap;
+
+}
+
+void RCM2MaterialStatus :: addStateVariables(const MaterialStatus &iStatus)
+{
+    printf("Entering RCM2MaterialStatus :: addStateVariables().\n");
+}
+
 } // end namespace oofem

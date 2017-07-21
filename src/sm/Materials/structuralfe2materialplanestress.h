@@ -32,27 +32,29 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef structuralfe2material_h
-#define structuralfe2material_h
+#ifndef structuralfe2materialplanestress_h
+#define structuralfe2materialplanestress_h
 
 #include "Materials/structuralmaterial.h"
 #include "Materials/structuralms.h"
 
 #include <memory>
 
-///@name Input fields for StructuralFE2Material
+///@name Input fields for StructuralFE2MaterialPlaneStress
 //@{
-#define _IFT_StructuralFE2Material_Name "structfe2material"
-#define _IFT_StructuralFE2Material_fileName "filename"
-#define _IFT_StructuralFE2Material_useNumericalTangent "use_num_tangent"
-#define _IFT_StructuralFE2Material_RegCoeff "regcoeff"
+#define _IFT_StructuralFE2MaterialPlaneStress_Name "structfe2materialplanestress"
+#define _IFT_StructuralFE2MaterialPlaneStress_fileName "filename"
+#define _IFT_StructuralFE2MaterialPlaneStress_useNumericalTangent "use_num_tangent"
+#define _IFT_StructuralFE2MaterialPlaneStress_RegCoeff "regcoeff"
+#define _IFT_StructuralFE2MaterialPlaneStress_useExternalStiffness "use_ext_stiffness"
+#define _IFT_StructuralFE2MaterialPlaneStress_allGPResults "allgpres"
 //@}
 
 namespace oofem {
 class EngngModel;
 class PrescribedGradientHomogenization;
 
-class StructuralFE2MaterialStatus : public StructuralMaterialStatus
+class StructuralFE2MaterialPlaneStressStatus : public StructuralMaterialStatus
 {
 protected:
     /// The RVE
@@ -63,14 +65,15 @@ protected:
     FloatMatrix tangent;
     bool oldTangent;
 
+
     /// Interface normal direction
     FloatArray mNormalDir;
 
     std :: string mInputFile;
 
 public:
-    StructuralFE2MaterialStatus(int n, Domain * d, GaussPoint * g,  const std :: string & inputfile);
-    virtual ~StructuralFE2MaterialStatus() {}
+    StructuralFE2MaterialPlaneStressStatus(int n, int j, Domain * d, GaussPoint * g,  const std :: string & inputfile);
+    virtual ~StructuralFE2MaterialPlaneStressStatus() {}
 
     EngngModel *giveRVE() { return this->rve.get(); }
     PrescribedGradientHomogenization *giveBC();// { return this->bc; }
@@ -79,16 +82,16 @@ public:
     void computeTangent(TimeStep *tStep);
 
     /// Creates/Initiates the RVE problem.
-    bool createRVE(int n, GaussPoint *gp, const std :: string &inputfile);
+    bool createRVE(int n, int j, GaussPoint *gp, const std :: string &inputfile);
 
     /// Copies time step data to RVE.
     void setTimeStep(TimeStep *tStep);
 
     FloatMatrix &giveTangent() { return tangent; }
     void setTangent(const FloatMatrix &iTangent) {tangent = iTangent; oldTangent = false;}
-    
-    virtual const char *giveClassName() const { return "StructuralFE2MaterialStatus"; }
-    
+
+    virtual const char *giveClassName() const { return "StructuralFE2MaterialPlaneStressStatus"; }
+
     virtual void initTempStatus();
 
     virtual void updateYourself(TimeStep *tStep);
@@ -110,7 +113,7 @@ public:
 
 };
 
-    
+
 /**
  * Multiscale constitutive model for subscale structural problems.
  *
@@ -119,32 +122,37 @@ public:
  * - It must have a PrescribedGradient boundary condition.
  * - It must be the first boundary condition
  *
- * @author Mikael Öhman 
+ * @author Mikael Öhman
  */
-class StructuralFE2Material : public StructuralMaterial
+class StructuralFE2MaterialPlaneStress : public StructuralMaterial
 {
 protected:
     std :: string inputfile;
     static int n;
     bool useNumTangent;
+    bool useExtStiff;
+    bool allGPRes;
 
     double mRegCoeff;
+    FloatMatrix givenTangent; //if the tangent is specified by user
 
 public:
-    StructuralFE2Material(int n, Domain * d);
-    virtual ~StructuralFE2Material();
+    StructuralFE2MaterialPlaneStress(int n, Domain * d);
+    virtual ~StructuralFE2MaterialPlaneStress();
 
     virtual IRResultType initializeFrom(InputRecord *ir);
     virtual void giveInputRecord(DynamicInputRecord &input);
-    virtual const char *giveInputRecordName() const { return _IFT_StructuralFE2Material_Name; }
-    virtual const char *giveClassName() const { return "StructuralFE2Material"; }
+    virtual const char *giveInputRecordName() const { return _IFT_StructuralFE2MaterialPlaneStress_Name; }
+    virtual const char *giveClassName() const { return "StructuralFE2MaterialPlaneStress"; }
     virtual bool isCharacteristicMtrxSymmetric(MatResponseMode rMode) { return true; }
 
     virtual MaterialStatus *CreateStatus(GaussPoint *gp) const;
     // stress computation methods
     virtual void giveRealStressVector_3d(FloatArray &answer, GaussPoint *gp, const FloatArray &reducedE, TimeStep *tStep);
-    
+    virtual void giveRealStressVector_StressControl(FloatArray &answer, GaussPoint *gp, const FloatArray &reducedE, const IntArray &strainControl, TimeStep *tStep);
+
     virtual void give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep);
+    virtual void givePlaneStressStiffMtrx(FloatMatrix &answer, MatResponseMode mmode, GaussPoint *gp, TimeStep *tStep);
 };
 
 } // end namespace oofem
