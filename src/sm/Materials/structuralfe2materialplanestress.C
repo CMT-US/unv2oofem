@@ -44,6 +44,7 @@
 #include "contextioerr.h"
 #include "generalboundarycondition.h"
 #include "prescribedgradienthomogenization.h"
+#include "prescribedfieldsgradientshomogenization.h"
 #include "exportmodulemanager.h"
 #include "vtkxmlexportmodule.h"
 #include "nummet.h"
@@ -83,9 +84,19 @@ StructuralFE2MaterialPlaneStress :: initializeFrom(InputRecord *ir)
     printf("mRegCoeff: %e\n", mRegCoeff );
 
     useExtStiff = ir->hasField(_IFT_StructuralFE2MaterialPlaneStress_useExternalStiffness);
-    IR_GIVE_OPTIONAL_FIELD(ir, givenTangent, _IFT_StructuralFE2MaterialPlaneStress_useExternalStiffness);
+    IR_GIVE_OPTIONAL_FIELD(ir, givendStressdEpsTangent, _IFT_StructuralFE2MaterialPlaneStress_dStressdEps);
 
     allGPRes = ir->hasField(_IFT_StructuralFE2MaterialPlaneStress_allGPResults);
+
+    IR_GIVE_OPTIONAL_FIELD(ir, givendStressdEpsTangent, _IFT_StructuralFE2MaterialPlaneStress_dStressdEps);
+    IR_GIVE_OPTIONAL_FIELD(ir, givendBStressdEpsTangent, _IFT_StructuralFE2MaterialPlaneStress_dBStressdEps);
+    IR_GIVE_OPTIONAL_FIELD(ir, givendRStressdEpsTangent, _IFT_StructuralFE2MaterialPlaneStress_dRStressdEps);
+    IR_GIVE_OPTIONAL_FIELD(ir, givendStressdSTangent, _IFT_StructuralFE2MaterialPlaneStress_dStressdS);
+    IR_GIVE_OPTIONAL_FIELD(ir, givendBStressdSTangent, _IFT_StructuralFE2MaterialPlaneStress_dBStressdS);
+    IR_GIVE_OPTIONAL_FIELD(ir, givendRStressdSTangent, _IFT_StructuralFE2MaterialPlaneStress_dRStressdS);
+    IR_GIVE_OPTIONAL_FIELD(ir, givendStressdGTangent, _IFT_StructuralFE2MaterialPlaneStress_dStressdG);
+    IR_GIVE_OPTIONAL_FIELD(ir, givendBStressdGTangent, _IFT_StructuralFE2MaterialPlaneStress_dBStressdG);
+    IR_GIVE_OPTIONAL_FIELD(ir, givendRStressdGTangent, _IFT_StructuralFE2MaterialPlaneStress_dRStressdG);
 
     return StructuralMaterial :: initializeFrom(ir);
 }
@@ -103,7 +114,15 @@ StructuralFE2MaterialPlaneStress :: giveInputRecord(DynamicInputRecord &input)
 
     if ( useExtStiff ) {
         input.setField(_IFT_StructuralFE2MaterialPlaneStress_useExternalStiffness);
-        input.setField(givenTangent, _IFT_StructuralFE2MaterialPlaneStress_useExternalStiffness);
+        input.setField(givendStressdEpsTangent, _IFT_StructuralFE2MaterialPlaneStress_dStressdEps);
+        input.setField(givendBStressdEpsTangent, _IFT_StructuralFE2MaterialPlaneStress_dBStressdEps);
+        input.setField(givendRStressdEpsTangent, _IFT_StructuralFE2MaterialPlaneStress_dRStressdEps);
+        input.setField(givendStressdSTangent, _IFT_StructuralFE2MaterialPlaneStress_dStressdS);
+        input.setField(givendBStressdSTangent, _IFT_StructuralFE2MaterialPlaneStress_dBStressdS);
+        input.setField(givendRStressdSTangent, _IFT_StructuralFE2MaterialPlaneStress_dRStressdS);
+        input.setField(givendStressdGTangent, _IFT_StructuralFE2MaterialPlaneStress_dStressdG);
+        input.setField(givendBStressdGTangent, _IFT_StructuralFE2MaterialPlaneStress_dBStressdG);
+        input.setField(givendRStressdGTangent, _IFT_StructuralFE2MaterialPlaneStress_dRStressdG);
     }
 
     input.setField(mRegCoeff, _IFT_StructuralFE2MaterialPlaneStress_RegCoeff);
@@ -142,6 +161,8 @@ StructuralFE2MaterialPlaneStress :: giveRealStressVector_3d(FloatArray &answer, 
     // Set input
     ms->giveBC()->setPrescribedGradientVoigt(totalStrain);
     // Solve subscale problem
+//     OOFEM_LOG_INFO("Solving subscale problem at element %d, gp %d. Applied strain is \n", gp->giveElement()->giveGlobalNumber(), gp->giveNumber() );
+//     totalStrain.printYourself();
     ms->giveRVE()->solveYourselfAt(tStep);
     // Post-process the stress
     ms->giveBC()->computeField(stress, tStep);
@@ -200,6 +221,204 @@ void StructuralFE2MaterialPlaneStress :: giveRealStressVector_StressControl(Floa
     return;
 }
 
+void StructuralFE2MaterialPlaneStress :: giveHomogenizedFields(FloatArray &Stress, FloatArray &bStress, FloatArray &rStress, const FloatArray &strain, const FloatArray &slip, const FloatArray &slipGradient, GaussPoint *gp, TimeStep *tStep)
+{
+    StructuralFE2MaterialPlaneStressStatus *ms = static_cast< StructuralFE2MaterialPlaneStressStatus *>( this->giveStatus(gp) );
+
+    ms->setTimeStep(tStep);
+    //Set input
+    ms->giveBC2F()->setPrescribedGradientVoigt(strain);
+    ms->giveBC2F()->setPrescribedField(slip);
+    ms->giveBC2F()->setPrescribedGradientVoigtAsymmetric(slipGradient);
+//     Solve subscale problem
+//     OOFEM_LOG_INFO("Solving subscale problem at element %d, gp %d. Applied strain is \n", gp->giveElement()->giveGlobalNumber(), gp->giveNumber() );
+//     strain.printYourself();
+//     OOFEM_LOG_INFO("Applied slip is \n");
+//     slip.printYourself();
+//     OOFEM_LOG_INFO("Applied slip gradient is \n");
+//     slipGradient.printYourself();
+    ms->giveRVE()->solveYourselfAt(tStep);
+    //Homogenize fields
+    FloatArray Stress4;
+    ms->giveBC2F()->computeStress(Stress4, tStep);
+    ms->giveBC2F()->computeBondStress(bStress, tStep);
+    ms->giveBC2F()->computeReinfStress(rStress, tStep);
+
+    if (Stress4.giveSize() == 4 ) {
+        Stress = {Stress4[0], Stress4[1], 0.5*(Stress4[2]+Stress4[3])};
+    } else {
+        StructuralMaterial::giveFullSymVectorForm(Stress, Stress4, gp->giveMaterialMode() );
+    }
+
+    // Update the material status variables
+    ms->letTempStressVectorBe(Stress);
+    ms->letTempStrainVectorBe(strain);
+    ms->letTempBondStressVectorBe(bStress);
+    ms->letTempSlipVectorBe(slip);
+    ms->letTempReinfStressVectorBe(rStress);
+    ms->letTempSlipGradVectorBe(slipGradient);
+    ms->markOldTangent(); // Mark this so that tangent is reevaluated if they are needed.
+}
+
+void StructuralFE2MaterialPlaneStress :: computeSensitivities(FloatMatrix &dStressdEps, FloatMatrix &dStressdS, FloatMatrix &dStressdG, FloatMatrix &dBStressdEps,
+                                      FloatMatrix &dBStressdS, FloatMatrix &dBStressdG, FloatMatrix &dRStressdEps, FloatMatrix &dRStressdS,
+                                      FloatMatrix &dRStressdG, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
+{
+    if ( useNumTangent ) {
+
+        //Numerical tangent
+        StructuralFE2MaterialPlaneStressStatus *status = static_cast<StructuralFE2MaterialPlaneStressStatus*>( this->giveStatus( gp ) );
+        double h = 1.0e-9;
+
+        //get current values from material status
+        const FloatArray &epsRed = status->giveTempStrainVector();
+        const FloatArray &slipRed = status->giveTempSlipVector();
+        const FloatArray &slipGradRed = status->giveTempSlipGradVector();
+
+        FloatArray eps=epsRed;
+        FloatArray slip=slipRed;
+        slip = {0,0}; //DUMMY
+        FloatArray slipGrad=slipGradRed;
+        slipGrad = {0, 0, 0, 0}; //DUMMY
+
+        int dim1 = eps.giveSize();
+        int dim2 = slip.giveSize();
+        int dim3 = slipGrad.giveSize();
+        dStressdEps.resize(dim1,dim1);  dStressdEps.zero();
+        dBStressdEps.resize(dim2,dim1); dBStressdEps.zero();
+        dRStressdEps.resize(dim3,dim1); dRStressdEps.zero();
+        dStressdS.resize(dim1,dim2);    dStressdS.zero();
+        dBStressdS.resize(dim2,dim2);   dBStressdS.zero();
+        dRStressdS.resize(dim3,dim2);   dRStressdS.zero();
+        dStressdG.resize(dim1,dim3);    dStressdG.zero();
+        dBStressdG.resize(dim2,dim3);   dBStressdG.zero();
+        dRStressdG.resize(dim3,dim3);   dRStressdG.zero();
+
+        FloatArray sig, sigPert, epsPert;
+        FloatArray bsig, bsigPert, slipPert;
+        FloatArray rsig, rsigPert, slipGradPert;
+
+        for(int i = 1; i <= dim1; i++) {
+            // Add a small perturbation to the strain
+            epsPert = eps;
+            epsPert.at(i) += h;
+
+            giveHomogenizedFields( sigPert, bsigPert, rsigPert, epsPert, slip, slipGrad, gp, tStep );
+            dStressdEps.setColumn( sigPert, i);
+            dBStressdEps.setColumn( bsigPert, i);
+            dRStressdEps.setColumn( rsigPert, i);
+        }
+
+        for(int i = 1; i <= dim2; i++) {
+            // Add a small perturbation to the slip
+            slipPert = slip;
+            slipPert.at(i) += h;
+
+            giveHomogenizedFields( sigPert, bsigPert, rsigPert, eps, slipPert, slipGrad, gp, tStep );
+            dStressdS.setColumn( sigPert, i );
+            dBStressdS.setColumn( bsigPert, i);
+            dRStressdS.setColumn( rsigPert, i);
+        }
+
+        for(int i = 1; i <= dim3; i++) {
+            // Add a small perturbation to slip gradient
+            slipGradPert = slipGrad;
+            slipGradPert.at(i) += h;
+
+            giveHomogenizedFields( sigPert, bsigPert, rsigPert, eps, slip, slipGradPert, gp, tStep );
+            dStressdG.setColumn( sigPert, i);
+            dBStressdG.setColumn( bsigPert, i);
+            dRStressdG.setColumn( rsigPert, i);
+        }
+
+        giveHomogenizedFields( sig, bsig, rsig, eps, slip, slipGrad, gp, tStep);
+
+        for(int i = 1; i <= dim1; i++) {
+            for(int j = 1; j <= dim1; j++) {
+                dStressdEps.at(j,i) -= sig.at(j);
+                dStressdEps.at(j,i) /= h;
+            }
+            for(int j = 1; j <= dim2; j++) {
+                dBStressdEps.at(j,i) -= bsig.at(j);
+                dBStressdEps.at(j,i) /= h;
+            }
+            for(int j = 1; j <= dim3; j++) {
+                dRStressdEps.at(j,i) -= rsig.at(j);
+                dRStressdEps.at(j,i) /= h;
+            }
+        }
+
+        for(int i = 1; i <= dim2; i++) {
+            for(int j = 1; j <= dim1; j++) {
+                dStressdS.at(j,i) -= sig.at(j);
+                dStressdS.at(j,i) /= h;
+            }
+            for(int j = 1; j <= dim2; j++) {
+                dBStressdS.at(j,i) -= bsig.at(j);
+                dBStressdS.at(j,i) /= h;
+            }
+            for(int j = 1; j <= dim3; j++) {
+                dRStressdS.at(j,i) -= rsig.at(j);
+                dRStressdS.at(j,i) /= h;
+            }
+        }
+
+        for(int i = 1; i <= dim3; i++) {
+            for(int j = 1; j <= dim1; j++) {
+                dStressdG.at(j,i) -= sig.at(j);
+                dStressdG.at(j,i) /= h;
+            }
+            for(int j = 1; j <= dim2; j++) {
+                dBStressdG.at(j,i) -= bsig.at(j);
+                dBStressdG.at(j,i) /= h;
+            }
+            for(int j = 1; j <= dim3; j++) {
+                dRStressdG.at(j,i) -= rsig.at(j);
+                dRStressdG.at(j,i) /= h;
+            }
+        }
+
+        status->setdStressdEpsTangent(dStressdEps);
+        status->setdBStressdEpsTangent(dBStressdEps);
+        status->setdRStressdEpsTangent(dRStressdEps);
+        status->setdStressdSTangent(dStressdS);
+        status->setdBStressdSTangent(dBStressdS);
+        status->setdRStressdSTangent(dRStressdS);
+        status->setdStressdGTangent(dStressdG);
+        status->setdBStressdGTangent(dBStressdG);
+        status->setdRStressdGTangent(dRStressdG);
+
+    } else if (useExtStiff) {
+
+        StructuralFE2MaterialPlaneStressStatus *ms = static_cast< StructuralFE2MaterialPlaneStressStatus * >( this->giveStatus(gp) );
+
+        dStressdEps = this->givendStressdEpsTangent;
+        dBStressdEps = this->givendBStressdEpsTangent;
+        dRStressdEps = this->givendRStressdEpsTangent;
+        dStressdS = this->givendStressdSTangent;
+        dBStressdS = this->givendBStressdSTangent;
+        dRStressdS = this->givendRStressdSTangent;
+        dStressdG = this->givendStressdGTangent;
+        dBStressdG = this->givendBStressdGTangent;
+        dRStressdG = this->givendRStressdGTangent;
+
+        ms->setdStressdEpsTangent(dStressdEps);
+        ms->setdBStressdEpsTangent(dBStressdEps);
+        ms->setdRStressdEpsTangent(dRStressdEps);
+        ms->setdStressdSTangent(dStressdS);
+        ms->setdBStressdSTangent(dBStressdS);
+        ms->setdRStressdSTangent(dRStressdS);
+        ms->setdStressdGTangent(dStressdG);
+        ms->setdBStressdGTangent(dBStressdG);
+        ms->setdRStressdGTangent(dRStressdG);
+
+    } else {
+
+        OOFEM_ERROR("Exact tangent not implemented.");
+
+    }
+}
+
 void
 StructuralFE2MaterialPlaneStress :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
 {
@@ -209,13 +428,9 @@ StructuralFE2MaterialPlaneStress :: give3dMaterialStiffnessMatrix(FloatMatrix &a
         double h = 1.0e-9;
 
         const FloatArray &epsRed = status->giveTempStrainVector();
-        FloatArray eps;
-        //StructuralMaterial::giveFullSymVectorForm(eps, epsRed, gp->giveMaterialMode() );
+        FloatArray eps=epsRed;
 
-
-//         int dim = eps.giveSize();
-        int dim = epsRed.giveSize();
-        eps.resize(dim);
+        int dim = eps.giveSize();
         answer.resize(dim, dim);
         answer.zero();
 
@@ -244,7 +459,7 @@ StructuralFE2MaterialPlaneStress :: give3dMaterialStiffnessMatrix(FloatMatrix &a
     } else if ( useExtStiff ) {
 
         StructuralFE2MaterialPlaneStressStatus *ms = static_cast< StructuralFE2MaterialPlaneStressStatus * >( this->giveStatus(gp) );
-        answer = this->givenTangent;
+        answer = this->givendStressdEpsTangent;
 
         ms->setTangent(answer);
 
@@ -343,12 +558,17 @@ mNewlyInitialized(true)
 
 }
 
-PrescribedGradientHomogenization* StructuralFE2MaterialPlaneStressStatus::giveBC()
+PrescribedGradientHomogenization* StructuralFE2MaterialPlaneStressStatus :: giveBC()
 {
 	this->bc = dynamic_cast< PrescribedGradientHomogenization * >( this->rve->giveDomain(1)->giveBc(1) );
 	return this->bc;
 }
 
+PrescribedFieldsGradientsHomogenization* StructuralFE2MaterialPlaneStressStatus :: giveBC2F()
+{
+    this->bc2f = dynamic_cast< PrescribedFieldsGradientsHomogenization * >( this->rve->giveDomain(1)->giveBc(1) );
+    return this->bc2f;
+}
 
 bool
 StructuralFE2MaterialPlaneStressStatus :: createRVE(int n, int j, GaussPoint *gp, const std :: string &inputfile)
@@ -373,7 +593,8 @@ StructuralFE2MaterialPlaneStressStatus :: createRVE(int n, int j, GaussPoint *gp
     this->rve->letOutputBaseFileNameBe( name.str() );
 
     this->bc = dynamic_cast< PrescribedGradientHomogenization * >( this->rve->giveDomain(1)->giveBc(1) );
-    if ( !this->bc ) {
+    this->bc2f = dynamic_cast< PrescribedFieldsGradientsHomogenization * >( this->rve->giveDomain(1)->giveBc(1) );
+    if ( (!this->bc)  &&  (!this->bc2f) ) {
         OOFEM_ERROR("RVE doesn't have necessary boundary condition; should have a type of PrescribedGradientHomogenization as first b.c.");
     }
 
@@ -393,10 +614,45 @@ void
 StructuralFE2MaterialPlaneStressStatus :: initTempStatus()
 {
     StructuralMaterialStatus :: initTempStatus();
+
+    // see if vectors describing reached equilibrium are defined
+    if ( this->giveSlipVector().giveSize() == 0 ) {
+        slipVector.resize(2);
+    }
+
+    if ( this->giveBondStressVector().giveSize() == 0) {
+        bStressVector.resize(2);
+    }
+
+    if (this->giveSlipGradVector().giveSize() == 0) {
+        slipGradVector.resize(4);
+    }
+
+    if (this->giveReinfStressVector().giveSize() == 0) {
+        rStressVector.resize(4);
+    }
+
+    // reset temp vars.
+    tempSlipVector = slipVector;
+    tempbStressVector = bStressVector;
+    tempSlipGradVector = slipGradVector;
+    temprStressVector = rStressVector;
 }
 
 void
-StructuralFE2MaterialPlaneStressStatus :: markOldTangent() { this->oldTangent = true; }
+StructuralFE2MaterialPlaneStressStatus :: markOldTangent()
+{
+    this->oldTangent = true;
+    this->olddSdETangent = true;
+    this->olddBSdETangent = true;
+    this->olddRSdETangent = true;
+    this->olddSdSTangent = true;
+    this->olddBSdSTangent = true;
+    this->olddRSdSTangent = true;
+    this->olddSdGTangent = true;
+    this->olddBSdGTangent = true;
+    this->olddRSdGTangent = true;
+}
 
 void
 StructuralFE2MaterialPlaneStressStatus :: computeTangent(TimeStep *tStep)
@@ -420,6 +676,11 @@ StructuralFE2MaterialPlaneStressStatus :: updateYourself(TimeStep *tStep)
     this->rve->terminate(tStep);
 
     mNewlyInitialized = false;
+
+    slipVector = tempSlipVector;
+    bStressVector = tempbStressVector;
+    slipGradVector = tempSlipGradVector;
+    rStressVector = temprStressVector;
 }
 
 
