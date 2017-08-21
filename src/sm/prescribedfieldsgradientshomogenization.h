@@ -108,7 +108,7 @@ public:
     /**
      * Computes the homogenized, macroscopic effective reinforcement stress
      * (membrane stress acting on the reinforcement bars)
-     * @param rStress Output quantityt (membrane stress acting on reinforcement grid)
+     * @param rStress Output quantity (membrane stress acting on reinforcement grid)
      * @param tStep Active time step.
      */
     virtual void computeReinfStress(FloatArray &rStress, TimeStep *tStep) = 0;

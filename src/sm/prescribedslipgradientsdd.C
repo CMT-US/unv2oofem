@@ -100,7 +100,7 @@ double PrescribedSlipGradientsDD :: give(Dof *dof, ValueModeType mode, double ti
     int isXReinf=0;
     int isYReinf=0;
     FloatArray eL, ePerp, us;
-    double sField;
+    double sField=0.0;
     eL.resize(coords->giveSize());
     ePerp.resize(coords->giveSize());
     eL.zero();
