@@ -867,6 +867,13 @@ RCM2Material :: giveIPValue(FloatArray &answer, GaussPoint *gp, InternalStateTyp
         }
 
         return 1;
+    } else if (type == IST_CrackWidth ) {
+        const double &crackStrain = status->giveCrackStrain(1);
+        const double &h = status->giveCharLength(1);
+        answer.resize(1);
+        answer.at(1) = crackStrain*h;
+
+        return 1;
     } else {
         return StructuralMaterial :: giveIPValue(answer, gp, type, tStep);
     }
