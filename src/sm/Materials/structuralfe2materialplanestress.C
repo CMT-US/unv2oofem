@@ -84,7 +84,6 @@ StructuralFE2MaterialPlaneStress :: initializeFrom(InputRecord *ir)
     printf("mRegCoeff: %e\n", mRegCoeff );
 
     useExtStiff = ir->hasField(_IFT_StructuralFE2MaterialPlaneStress_useExternalStiffness);
-    IR_GIVE_OPTIONAL_FIELD(ir, givendStressdEpsTangent, _IFT_StructuralFE2MaterialPlaneStress_dStressdEps);
 
     allGPRes = ir->hasField(_IFT_StructuralFE2MaterialPlaneStress_allGPResults);
 
