@@ -240,7 +240,7 @@ void StructuralFE2MaterialPlaneStress :: giveHomogenizedFields(FloatArray &Stres
     //Homogenize fields
     FloatArray Stress4;
     ms->giveBC2F()->computeStress(Stress4, tStep);
-    ms->giveBC2F()->computeBondStress(bStress, tStep);
+    ms->giveBC2F()->computeTransferStress(bStress, tStep);
     ms->giveBC2F()->computeReinfStress(rStress, tStep);
 
     if (Stress4.giveSize() == 4 ) {
@@ -252,7 +252,7 @@ void StructuralFE2MaterialPlaneStress :: giveHomogenizedFields(FloatArray &Stres
     // Update the material status variables
     ms->letTempStressVectorBe(Stress);
     ms->letTempStrainVectorBe(strain);
-    ms->letTempBondStressVectorBe(bStress);
+    ms->letTempTransferStressVectorBe(bStress);
     ms->letTempSlipVectorBe(slip);
     ms->letTempReinfStressVectorBe(rStress);
     ms->letTempSlipGradVectorBe(slipGradient);
@@ -619,7 +619,7 @@ StructuralFE2MaterialPlaneStressStatus :: initTempStatus()
         slipVector.resize(2);
     }
 
-    if ( this->giveBondStressVector().giveSize() == 0) {
+    if ( this->giveTransferStressVector().giveSize() == 0) {
         bStressVector.resize(2);
     }
 

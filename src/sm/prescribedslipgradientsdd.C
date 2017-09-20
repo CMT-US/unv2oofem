@@ -287,9 +287,10 @@ void PrescribedSlipGradientsDD :: computeStress(FloatArray &sigma, TimeStep *tSt
     sigma.times( 1. / (this->domainSize(this->giveDomain(), conboundset) * thick ) );
 }
 
-void PrescribedSlipGradientsDD :: computeBondStress(FloatArray &bStress, TimeStep *tStep)
+void PrescribedSlipGradientsDD :: computeTransferStress(FloatArray &bStress, TimeStep *tStep)
 {
-     //According to 1/(\Omega_\Box) * \sum R_L \be{l}
+    //According to 1/(\Omega_\Box) * \sum R_L \be{l}
+    // [ tau_bxx, tau_byy ]
 
     EngngModel *emodel = this->domain->giveEngngModel();
     Domain *domain = this->giveDomain();
@@ -342,6 +343,7 @@ void PrescribedSlipGradientsDD :: computeBondStress(FloatArray &bStress, TimeSte
 void PrescribedSlipGradientsDD :: computeReinfStress(FloatArray &rStress, TimeStep *tStep)
 {
     //According to 1/(\Omega_\Box) * \sum R_L \be{l} \outerp [x - \bar{x} ]
+    //order: sxx, syy, sxy, syx
 
     EngngModel *emodel = this->domain->giveEngngModel();
     Domain *domain = this->giveDomain();

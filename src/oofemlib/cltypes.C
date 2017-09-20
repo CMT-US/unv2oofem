@@ -156,7 +156,7 @@ InternalStateValueType giveInternalStateValueType(InternalStateType type)
     case IST_PrincStressVector2:
     case IST_PrincStressVector3:
     case IST_ShearSlip:
-    case IST_BondStress:
+    case IST_TransferStress:
         return ISVT_VECTOR;
 
     case IST_MaxEquivalentStrainLevel:

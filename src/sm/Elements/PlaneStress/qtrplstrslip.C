@@ -293,9 +293,9 @@ int QTrPlaneStress2dSlip :: giveIPValue(FloatArray &answer, GaussPoint *gp, Inte
         StructuralFE2MaterialPlaneStressStatus* status=static_cast< StructuralFE2MaterialPlaneStressStatus * >( gp->giveMaterialStatus() );
         answer = status->giveSlipVector();
         return 1;
-    } else if ( type == IST_BondStress ) {
+    } else if ( type == IST_TransferStress ) {
         StructuralFE2MaterialPlaneStressStatus* status=static_cast< StructuralFE2MaterialPlaneStressStatus * >( gp->giveMaterialStatus() );
-        answer = status->giveBondStressVector();
+        answer = status->giveTransferStressVector();
         return 1;
     } else if ( type == IST_ShearSlipGradient ) {
         StructuralFE2MaterialPlaneStressStatus* status=static_cast< StructuralFE2MaterialPlaneStressStatus * >( gp->giveMaterialStatus() );

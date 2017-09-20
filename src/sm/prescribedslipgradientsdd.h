@@ -111,7 +111,7 @@ public:
      * @param bStress Output quantity (bond stress * circumference / RVE area)
      * @param tStep Active time step.
      */
-    virtual void computeBondStress(FloatArray &bStress, TimeStep *tStep);
+    virtual void computeTransferStress(FloatArray &bStress, TimeStep *tStep);
 
     /**
      * Computes the homogenized, macroscopic effective reinforcement stress

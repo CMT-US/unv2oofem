@@ -606,14 +606,14 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
         FloatArray stress, bStress, rStress;
         if (psgdd) {
             psgdd->computeStress(stress,tStep);
-            psgdd->computeBondStress(bStress,tStep);
+            psgdd->computeTransferStress(bStress,tStep);
             psgdd->computeReinfStress(rStress,tStep);
             fprintf(FID, "\tspecials.prescribedslipgradientsdd{%u}.stress=[",psgddcount);
             for (auto i: stress) {
                 fprintf(FID, "%.10e\t", i);
             }
             fprintf(FID,"];\n");
-            fprintf(FID, "\tspecials.prescibedslipgradientsdd{%u}.bondstress=[",psgddcount);
+            fprintf(FID, "\tspecials.prescibedslipgradientsdd{%u}.transferstress=[",psgddcount);
             for (auto i: bStress) {
                 fprintf(FID, "%.10e\t", i);
             }

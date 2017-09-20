@@ -94,7 +94,7 @@ protected:
 
     /// Equilibrated slip vector in reduced form
     FloatArray slipVector;
-    /// Equilibrated bond stress vector in reduced form
+    /// Equilibrated transfer stress vector in reduced form
     FloatArray bStressVector;
     /// Temporary bond stress vector in reduced form (increments are used mainly in nonlinear analysis)
     FloatArray tempbStressVector;
@@ -181,17 +181,17 @@ public:
     /// Returns the const pointer to receiver's slip vector.
     const FloatArray &giveSlipVector() const { return slipVector; }
     /// Returns the const pointer to receiver's bond stress vector.
-    const FloatArray &giveBondStressVector() const { return bStressVector; }
+    const FloatArray &giveTransferStressVector() const { return bStressVector; }
     /// Returns the const pointer to receiver's temporary slip vector.
     const FloatArray &giveTempSlipVector() const { return tempSlipVector; }
     /// Returns the const pointer to receiver's temporary bond stress vector.
-    const FloatArray &giveTempBondStressVector() const { return tempbStressVector; }
+    const FloatArray &giveTempTransferStressVector() const { return tempbStressVector; }
     /// Assigns slip vector to given vector v.
     void letSlipVectorBe(const FloatArray &v) { slipVector = v; }
     /// Assigns bond stress vector to given vector v.
-    void letBondStressVectorBe(const FloatArray &v) { bStressVector = v; }
+    void letTransferStressVectorBe(const FloatArray &v) { bStressVector = v; }
     /// Assigns tempbStressVector to given vector v.
-    void letTempBondStressVectorBe(const FloatArray &v) { tempbStressVector = v; }
+    void letTempTransferStressVectorBe(const FloatArray &v) { tempbStressVector = v; }
     /// Assigns tempSlipVector to given vector v
     void letTempSlipVectorBe(const FloatArray &v) { tempSlipVector = v; }
 

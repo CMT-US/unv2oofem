@@ -178,7 +178,7 @@ namespace oofem {
     ENUM_ITEM_WITH_VALUE(IST_MomentTensor, 128) \
     ENUM_ITEM_WITH_VALUE(IST_MomentTensorTemp, 129) \
     ENUM_ITEM_WITH_VALUE(IST_ShearSlip, 130) \
-    ENUM_ITEM_WITH_VALUE(IST_BondStress, 131) \
+    ENUM_ITEM_WITH_VALUE(IST_TransferStress, 131) \
     ENUM_ITEM_WITH_VALUE(IST_ShearSlipGradient, 132) \
     ENUM_ITEM_WITH_VALUE(IST_ReinforcementMembraneStress, 133)
 
