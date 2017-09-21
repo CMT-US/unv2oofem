@@ -262,7 +262,11 @@ RigidArmNode :: computeMasterContribution(std::map< DofIDItem, IntArray > &maste
       masterContribution [ id ].resize(dofidmask->giveSize());
       
       for (int j = 1; j <= this->dofidmask->giveSize(); j++ ) {
-        masterContribution [ id ].at(j) = T.at(id, dofidmask->at(j));
+        if ( dofidmask->at(j) <= 6 && id <= 6 ) { //hack to make rigidarmnode work with dofids other than 1-6 (displacement/rotation), in this case there's no tying
+            masterContribution [ id ].at(j) = T.at(id, dofidmask->at(j));
+        } else if ( dofidmask->findFirstIndexOf(id) == j ) {
+            masterContribution [ id ].at(j) = 1;
+        }
       }
     }
 
