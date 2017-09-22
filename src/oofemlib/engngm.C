@@ -79,12 +79,6 @@
 #include <cstdio>
 #include <cstdarg>
 #include <ctime>
-// include unistd.h; needed for access
-#ifdef HAVE_UNISTD_H
- #include <unistd.h>
-#elif _MSC_VER
- #include <io.h>
-#endif
 
 #ifdef __OOFEG
  #include "oofeggraphiccontext.h"
@@ -204,13 +198,9 @@ EngngModel :: Instanciate_init()
 }
 
 
-int EngngModel :: instanciateYourself(DataReader *dr, InputRecord *ir, const char *dataOutputFileName, const char *desc)
-// simple input - only number of steps variable is read
+int EngngModel :: instanciateYourself(DataReader &dr, InputRecord *ir, const char *dataOutputFileName, const char *desc)
 {
-    OOFEMTXTDataReader *txtReader = dynamic_cast< OOFEMTXTDataReader* > (dr);
-    if ( txtReader != NULL ) {
-        referenceFileName = std :: string(txtReader->giveDataSourceName());
-    }
+    referenceFileName = dr.giveReferenceName();
 
     bool inputReaderFinish = true;
 
@@ -229,7 +219,7 @@ int EngngModel :: instanciateYourself(DataReader *dr, InputRecord *ir, const cha
     this->startTime = time(NULL);
 
 #  ifdef VERBOSE
-    OOFEM_LOG_DEBUG( "Reading all data from input file %s\n", dr->giveDataSourceName() );
+    OOFEM_LOG_DEBUG( "Reading all data from \"%s\"\n", referenceFileName.c_str() );
 #  endif
 
     simulationDescription = std::string(desc);
@@ -343,7 +333,7 @@ EngngModel :: initializeFrom(InputRecord *ir)
 
 
 int
-EngngModel :: instanciateDomains(DataReader *dr)
+EngngModel :: instanciateDomains(DataReader &dr)
 {
     int result = 1;
     // read problem domains
@@ -356,9 +346,8 @@ EngngModel :: instanciateDomains(DataReader *dr)
 }
 
 
-
 int
-EngngModel :: instanciateMetaSteps(DataReader *dr)
+EngngModel :: instanciateMetaSteps(DataReader &dr)
 {
     int result = 1;
 
@@ -372,10 +361,9 @@ EngngModel :: instanciateMetaSteps(DataReader *dr)
 
     // read problem domains
     for ( int i = 1; i <= this->nMetaSteps; i++ ) {
-        InputRecord *ir = dr->giveInputRecord(DataReader :: IR_mstepRec, i);
+        InputRecord *ir = dr.giveInputRecord(DataReader :: IR_mstepRec, i);
         result &= metaStepList[i-1].initializeFrom(ir);
     }
-
 
     this->numberOfSteps = metaStepList.size();
     return result;
@@ -522,7 +510,7 @@ EngngModel :: solveYourself()
     }
 
     for ( int imstep = smstep; imstep <= nMetaSteps; imstep++, sjstep = 1 ) { //loop over meta steps
-        MetaStep *activeMStep = this->giveMetaStep(imstep);
+        auto activeMStep = this->giveMetaStep(imstep);
         // update state according to new meta step
         this->initMetaStepAttributes(activeMStep);
 
@@ -570,7 +558,6 @@ EngngModel :: solveYourself()
 
 TimeStep* EngngModel :: generateNextStep()
 {
-    /* code */
     int smstep = 1, sjstep = 1;
     if ( this->currentStep ) {
         smstep = this->currentStep->giveMetaStepNumber();
@@ -815,9 +802,6 @@ void EngngModel :: printDofOutputAt(FILE *stream, Dof *iDof, TimeStep *tStep)
 
 void EngngModel :: assemble(SparseMtrx &answer, TimeStep *tStep, const MatrixAssembler &ma,
                             const UnknownNumberingScheme &s, Domain *domain)
-//
-// assembles matrix
-//
 {
     IntArray loc;
     FloatMatrix mat, R;
@@ -828,7 +812,7 @@ void EngngModel :: assemble(SparseMtrx &answer, TimeStep *tStep, const MatrixAss
  #pragma omp parallel for shared(answer) private(mat, R, loc)
 #endif
     for ( int ielem = 1; ielem <= nelem; ielem++ ) {
-        Element *element = domain->giveElement(ielem);
+        auto element = domain->giveElement(ielem);
         // skip remote elements (these are used as mirrors of remote elements on other domains
         // when nonlocal constitutive models are used. They introduction is necessary to
         // allow local averaging on domains without fine grain communication between domains).
@@ -854,15 +838,15 @@ void EngngModel :: assemble(SparseMtrx &answer, TimeStep *tStep, const MatrixAss
         }
     }
 
-    int nbc = domain->giveNumberOfBoundaryConditions();
-    for ( int i = 1; i <= nbc; ++i ) {
-        GeneralBoundaryCondition *bc = domain->giveBc(i);
-        ActiveBoundaryCondition *abc;
-        Load *load;
+    for ( auto &bc : domain->giveBcs() ) {
+        if ( !bc->isImposed(tStep) ) continue;
+        auto abc = dynamic_cast< ActiveBoundaryCondition * >(bc.get());
 
-        if ( ( abc = dynamic_cast< ActiveBoundaryCondition * >(bc) ) ) {
+        if ( abc ) {
             ma.assembleFromActiveBC(answer, *abc, tStep, s, s);
-        } else if ( bc->giveSetNumber() && ( load = dynamic_cast< Load * >(bc) ) && bc->isImposed(tStep) ) {
+        } else if ( bc->giveSetNumber() ) {
+            auto load = dynamic_cast< Load * >(bc.get());
+            if ( !load ) continue;
             // Now we assemble the corresponding load type for the respective components in the set:
             IntArray loc, bNodes;
             FloatMatrix mat, R;
@@ -873,8 +857,8 @@ void EngngModel :: assemble(SparseMtrx &answer, TimeStep *tStep, const MatrixAss
 
             if ( ( bodyLoad = dynamic_cast< BodyLoad * >(load) ) ) { // Body load:
                 const IntArray &elements = set->giveElementList();
-                for ( int ielem = 1; ielem <= elements.giveSize(); ++ielem ) {
-                    Element *element = domain->giveElement( elements.at(ielem) );
+                for ( auto ielem : elements ) {
+                    auto element = domain->giveElement( ielem );
                     mat.clear();
                     ma.matrixFromLoad(mat, *element, bodyLoad, tStep);
 
@@ -887,11 +871,11 @@ void EngngModel :: assemble(SparseMtrx &answer, TimeStep *tStep, const MatrixAss
                         answer.assemble(loc, mat);
                     }
                 }
-            } else if ( ( sLoad = dynamic_cast< SurfaceLoad * >(load) ) ) { // Surface load:
-                const IntArray &boundaries = set->giveBoundaryList();
-                for ( int ibnd = 1; ibnd <= boundaries.giveSize() / 2; ++ibnd ) {
-                    Element *element = domain->giveElement( boundaries.at(ibnd * 2 - 1) );
-                    int boundary = boundaries.at(ibnd * 2);
+            } else if ( ( sLoad = dynamic_cast< SurfaceLoad * >(load) ) ) {
+                const auto &surfaces = set->giveBoundaryList();
+                for ( int ibnd = 1; ibnd <= surfaces.giveSize() / 2; ++ibnd ) {
+                    auto element = domain->giveElement( surfaces.at(ibnd * 2 - 1) );
+                    int boundary = surfaces.at(ibnd * 2);
                     mat.clear();
                     ma.matrixFromSurfaceLoad(mat, *element, sLoad, boundary, tStep);
 
@@ -905,11 +889,11 @@ void EngngModel :: assemble(SparseMtrx &answer, TimeStep *tStep, const MatrixAss
                         answer.assemble(loc, mat);
                     }
                 }
-            } else if ( ( eLoad = dynamic_cast< EdgeLoad * >(load) ) ) { // Edge load:
-                const IntArray &edgeBoundaries = set->giveEdgeList();
-                for ( int ibnd = 1; ibnd <= edgeBoundaries.giveSize() / 2; ++ibnd ) {
-                    Element *element = domain->giveElement( edgeBoundaries.at(ibnd * 2 - 1) );
-                    int boundary = edgeBoundaries.at(ibnd * 2);
+            } else if ( ( eLoad = dynamic_cast< EdgeLoad * >(load) ) ) {
+                const auto &edges = set->giveEdgeList();
+                for ( int ibnd = 1; ibnd <= edges.giveSize() / 2; ++ibnd ) {
+                    auto element = domain->giveElement( edges.at(ibnd * 2 - 1) );
+                    int boundary = edges.at(ibnd * 2);
                     mat.clear();
                     ma.matrixFromEdgeLoad(mat, *element, eLoad, boundary, tStep);
 
@@ -928,7 +912,7 @@ void EngngModel :: assemble(SparseMtrx &answer, TimeStep *tStep, const MatrixAss
     }
 
     if ( domain->hasContactManager() ) {
-        OOFEM_ERROR("Contant problems temporarily deactivated");
+        OOFEM_ERROR("Contact problems temporarily deactivated");
         //domain->giveContactManager()->assembleTangentFromContacts(answer, tStep, type, s, s);
     }
 
@@ -978,9 +962,8 @@ void EngngModel :: assemble(SparseMtrx &answer, TimeStep *tStep, const MatrixAss
         }
     }
 
-    int nbc = domain->giveNumberOfBoundaryConditions();
-    for ( int i = 1; i <= nbc; ++i ) {
-        ActiveBoundaryCondition *bc = dynamic_cast< ActiveBoundaryCondition * >( domain->giveBc(i) );
+    for ( auto &gbc : domain->giveBcs() ) {
+        ActiveBoundaryCondition *bc = dynamic_cast< ActiveBoundaryCondition * >( gbc.get() );
         if ( bc != NULL ) {
             ma.assembleFromActiveBC(answer, *bc, tStep, rs, cs);
         }
@@ -1702,31 +1685,8 @@ EngngModel :: giveCurrentMetaStep()
 }
 
 
-int
-EngngModel :: giveContextFile(FILE **contextFile, int tStepNumber, int stepVersion, ContextFileMode cmode, int errLevel)
-{
-    std :: string fname = giveContextFileName(tStepNumber, stepVersion);
-
-    if ( cmode ==  contextMode_read ) {
-        * contextFile = fopen(fname.c_str(), "rb"); // open for reading
-    } else {
-        * contextFile = fopen(fname.c_str(), "wb"); // open for writing,
-    }
-
-    //  rewind (*contextFile); // seek the beginning
-    // // overwrite if exist
-    // else *contextFile = fopen(fname,"r+"); // open for reading and writing
-
-    if ( ( * contextFile == NULL ) && errLevel > 0 ) {
-        OOFEM_ERROR("can't open %s", fname.c_str());
-    }
-
-    return 1;
-}
-
-
 std ::string
-EngngModel :: giveContextFileName(int tStepNumber, int stepVersion)
+EngngModel :: giveContextFileName(int tStepNumber, int stepVersion) const
 {
     std :: string fname = this->coreOutputFileName;
     char fext [ 100 ];
@@ -1735,43 +1695,13 @@ EngngModel :: giveContextFileName(int tStepNumber, int stepVersion)
 }
 
 
-bool
-EngngModel :: testContextFile(int tStepNumber, int stepVersion)
-{
-    std :: string fname = giveContextFileName(tStepNumber, stepVersion);
-
-#ifdef HAVE_ACCESS
-    return access(fname.c_str(), R_OK) == 0;
-
-#elif _MSC_VER
-    return _access(fname.c_str(), 4) == 0;
-
-#else
-    return true;
-
-#endif
-}
-
-DataReader *
-EngngModel :: GiveDomainDataReader(int domainNum, int domainSerNum, ContextFileMode cmode)
-//
-//
-// returns domain i/o file
-// returns nonzero on success
-//
+std :: string
+EngngModel :: giveDomainFileName(int domainNum, int domainSerNum) const
 {
     std :: string fname = this->coreOutputFileName;
     char fext [ 100 ];
     sprintf(fext, ".domain.%d.%d.din", domainNum, domainSerNum);
-    fname += fext;
-
-    DataReader *dr;
-
-    if ( ( dr = new OOFEMTXTDataReader( fname ) ) == NULL ) {
-        OOFEM_ERROR("Creation of DataReader failed");
-    }
-
-    return dr;
+    return fname + fext;
 }
 
 std :: string
