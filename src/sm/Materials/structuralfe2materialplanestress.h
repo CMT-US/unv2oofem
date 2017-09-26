@@ -37,6 +37,7 @@
 
 #include "Materials/structuralmaterial.h"
 #include "Materials/structuralms.h"
+#include "intarray.h"
 
 #include <memory>
 
@@ -48,6 +49,7 @@
 #define _IFT_StructuralFE2MaterialPlaneStress_RegCoeff "regcoeff"
 #define _IFT_StructuralFE2MaterialPlaneStress_useExternalStiffness "use_ext_stiffness"
 #define _IFT_StructuralFE2MaterialPlaneStress_allGPResults "allgpres"
+#define _IFT_StructuralFE2MaterialPlaneStress_outputSelectedResults "output_selected_el_gp"
 #define _IFT_StructuralFE2MaterialPlaneStress_dStressdEps "dsde"
 #define _IFT_StructuralFE2MaterialPlaneStress_dBStressdEps "dbsde"
 #define _IFT_StructuralFE2MaterialPlaneStress_dRStressdEps "drsde"
@@ -234,6 +236,7 @@ protected:
     bool useNumTangent;
     bool useExtStiff;
     bool allGPRes;
+    IntArray outputSelected;
 
     double mRegCoeff;
     FloatMatrix givendStressdEpsTangent, givendBStressdEpsTangent, givendRStressdEpsTangent;

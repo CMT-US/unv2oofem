@@ -87,6 +87,8 @@ StructuralFE2MaterialPlaneStress :: initializeFrom(InputRecord *ir)
 
     allGPRes = ir->hasField(_IFT_StructuralFE2MaterialPlaneStress_allGPResults);
 
+    IR_GIVE_OPTIONAL_FIELD(ir, outputSelected, _IFT_StructuralFE2MaterialPlaneStress_outputSelectedResults);
+
     IR_GIVE_OPTIONAL_FIELD(ir, givendStressdEpsTangent, _IFT_StructuralFE2MaterialPlaneStress_dStressdEps);
     IR_GIVE_OPTIONAL_FIELD(ir, givendBStressdEpsTangent, _IFT_StructuralFE2MaterialPlaneStress_dBStressdEps);
     IR_GIVE_OPTIONAL_FIELD(ir, givendRStressdEpsTangent, _IFT_StructuralFE2MaterialPlaneStress_dRStressdEps);
@@ -126,6 +128,7 @@ StructuralFE2MaterialPlaneStress :: giveInputRecord(DynamicInputRecord &input)
 
     input.setField(mRegCoeff, _IFT_StructuralFE2MaterialPlaneStress_RegCoeff);
     input.setField(allGPRes, _IFT_StructuralFE2MaterialPlaneStress_allGPResults);
+    input.setField(outputSelected, _IFT_StructuralFE2MaterialPlaneStress_outputSelectedResults);
 }
 
 
@@ -136,6 +139,23 @@ StructuralFE2MaterialPlaneStress :: CreateStatus(GaussPoint *gp) const
         int nel = gp->giveElement()->giveGlobalNumber();
         int gpn = gp->giveNumber();
         return new StructuralFE2MaterialPlaneStressStatus(gpn, nel, this->giveDomain(), gp, this->inputfile);
+    } else if ( !(outputSelected.giveSize() == 0) ) {
+        int nel = gp->giveElement()->giveGlobalNumber();
+        int gpn = gp->giveNumber();
+        //split the list
+        IntArray elements, GPs;
+        elements.resize(outputSelected.giveSize()/2);
+        GPs.resize(outputSelected.giveSize()/2);
+        for ( int i = 1; i <= outputSelected.giveSize()/2 ; i++ ) {
+            elements.at(i) = outputSelected.at(2*i-1);
+            GPs.at(i) = outputSelected.at(2*i);
+        }
+
+        if ( elements.contains(nel) && GPs.contains(gpn) )  {
+            return new StructuralFE2MaterialPlaneStressStatus(nel, gpn, this->giveDomain(), gp, this->inputfile);
+        } else {
+            return new StructuralFE2MaterialPlaneStressStatus(1, 1, this->giveDomain(), gp, this->inputfile);
+        }
     } else {
         return new StructuralFE2MaterialPlaneStressStatus(1, 1, this->giveDomain(), gp, this->inputfile);
     }
@@ -230,13 +250,9 @@ void StructuralFE2MaterialPlaneStress :: giveHomogenizedFields(FloatArray &Stres
     ms->giveBC2F()->setPrescribedField(slip);
     ms->giveBC2F()->setPrescribedGradientVoigtAsymmetric(slipGradient);
 //     Solve subscale problem
-//     OOFEM_LOG_INFO("Solving subscale problem at element %d, gp %d. Applied strain is \n", gp->giveElement()->giveGlobalNumber(), gp->giveNumber() );
-//     strain.printYourself();
-//     OOFEM_LOG_INFO("Applied slip is \n");
-//     slip.printYourself();
-//     OOFEM_LOG_INFO("Applied slip gradient is \n");
-//     slipGradient.printYourself();
+//     OOFEM_LOG_INFO("Solving subscale problem at element %d, gp %d.\n Applied strain is %10.6e, %10.6e, %10.6e \n Applied slip is %10.6e, %10.6e \n Applied slip gradient is %10.6e, %10.6e, %10.6e, %10.6e \n", gp->giveElement()->giveGlobalNumber(), gp->giveNumber(), strain.at(1), strain.at(2), strain.at(3), slip.at(1), slip.at(2), slipGradient.at(1), slipGradient.at(2), slipGradient.at(3), slipGradient.at(4) );
     ms->giveRVE()->solveYourselfAt(tStep);
+//     OOFEM_LOG_INFO("Solution of RVE problem @ element %d, gp %d OK. \n", gp->giveElement()->giveGlobalNumber(), gp->giveNumber() );
     //Homogenize fields
     FloatArray Stress4;
     ms->giveBC2F()->computeStress(Stress4, tStep);
@@ -584,7 +600,7 @@ StructuralFE2MaterialPlaneStressStatus :: createRVE(int n, int j, GaussPoint *gp
     this->rve.reset( em );
 
     std :: ostringstream name;
-    name << this->rve->giveOutputBaseFileName() << "-gp" << n << "-el" << j;
+    name << this->rve->giveOutputBaseFileName() << "-el" << n << "-gp" << j;
     if ( this->domain->giveEngngModel()->isParallel() && this->domain->giveEngngModel()->giveNumberOfProcesses() > 1 ) {
         name << "." << this->domain->giveEngngModel()->giveRank();
     }
