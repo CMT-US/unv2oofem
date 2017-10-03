@@ -637,7 +637,7 @@ struct PyDataReader : DataReader, wrapper<DataReader>
 
 void pyclass_DataReader()
 {
-    class_<PyDataReader, boost::noncopyable>("DataReader")
+    class_<PyDataReader*, boost::noncopyable>("DataReader")
         ;
 }
 
