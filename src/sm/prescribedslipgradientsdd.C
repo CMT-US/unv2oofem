@@ -101,6 +101,7 @@ double PrescribedSlipGradientsDD :: give(Dof *dof, ValueModeType mode, double ti
     int isYReinf=0;
     FloatArray eL, ePerp, us;
     double sField=0.0;
+    double sGradField=0.0;
     eL.resize(coords->giveSize());
     ePerp.resize(coords->giveSize());
     eL.zero();
@@ -116,6 +117,7 @@ double PrescribedSlipGradientsDD :: give(Dof *dof, ValueModeType mode, double ti
         ePerp.at(2)=1;
         us.beProductOf(mGradient2, dx);
         sField = eL.dotProduct(mField2);
+        sGradField = eL.dotProduct(us);
     } else if (sety->giveNodeList().contains(dof->giveDofManager()->giveGlobalNumber()) ) {
         isYReinf=1;
         eL.at(1)=0;
@@ -124,6 +126,7 @@ double PrescribedSlipGradientsDD :: give(Dof *dof, ValueModeType mode, double ti
         ePerp.at(2)=0;
         us.beProductOf(mGradient2, dx);
         sField= eL.dotProduct(mField2);
+        sGradField = eL.dotProduct(us);
     } else {
         isXReinf=0;
         isYReinf=0;
@@ -131,14 +134,14 @@ double PrescribedSlipGradientsDD :: give(Dof *dof, ValueModeType mode, double ti
 
     if(pos > 0 && pos <= u.giveSize()) {
         if (isXReinf) {
-            if (pos == 1) {return u.at(pos) += sField + us.at(pos);}
-            else if (pos == 2 ) {return u.at(pos) += us.at(pos);}
+            if (pos == 1) {return u.at(pos) += sField + sGradField;}
+            else if (pos == 2 ) {return u.at(pos); }
             else if ( pos == 3) {return u.at(pos) = -mGradient1.at(2,1);} //@todo: contribution from slip gradient?
             else { return 0.0;}
         } else if (isYReinf) {
-            if (pos == 1) {return u.at(pos) += us.at(pos);}
-            else if (pos == 2) {return u.at(pos) += sField + us.at(pos);} //@todo: contribution from slip gradient?
-            else if (pos == 3) {return u.at(pos) = mGradient1.at(2,1);}
+            if (pos == 1) {return u.at(pos); }
+            else if (pos == 2) {return u.at(pos) += sField + sGradField;}
+            else if (pos == 3) {return u.at(pos) = mGradient1.at(2,1);} //@todo: contribution from slip gradient?
             else { return 0.0;}
         } else {
         return u.at(pos);
@@ -265,6 +268,8 @@ void PrescribedSlipGradientsDD :: updateCoefficientMatrix(FloatMatrix &C)
 
 void PrescribedSlipGradientsDD :: computeStress(FloatArray &sigma, TimeStep *tStep)
 {
+    //order: sxx, syy, sxy, syx
+
     EngngModel *emodel = this->domain->giveEngngModel();
     int npeq = emodel->giveNumberOfDomainEquations( this->giveDomain()->giveNumber(), EModelDefaultPrescribedEquationNumbering() );
     FloatArray R_c(npeq), R_ext(npeq);
