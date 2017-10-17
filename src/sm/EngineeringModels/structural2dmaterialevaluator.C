@@ -32,7 +32,7 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "structuralmaterialevaluator.h"
+#include "structural2dmaterialevaluator.h"
 #include "inputrecord.h"
 #include "timestep.h"
 #include "domain.h"
@@ -43,43 +43,44 @@
 #include "classfactory.h"
 
 #include <fstream>
+#include <iomanip>
 
 namespace oofem {
-REGISTER_EngngModel(StructuralMaterialEvaluator);
+REGISTER_EngngModel(Structural2dMaterialEvaluator);
 
-StructuralMaterialEvaluator :: StructuralMaterialEvaluator(int i, EngngModel *_master) : EngngModel(i, _master)
+Structural2dMaterialEvaluator :: Structural2dMaterialEvaluator(int i, EngngModel *_master) : EngngModel(i, _master)
 {
     this->ndomains = 1;
 }
 
-StructuralMaterialEvaluator :: ~StructuralMaterialEvaluator()
+Structural2dMaterialEvaluator :: ~Structural2dMaterialEvaluator()
 { }
 
-IRResultType StructuralMaterialEvaluator :: initializeFrom(InputRecord *ir)
+IRResultType Structural2dMaterialEvaluator :: initializeFrom(InputRecord *ir)
 {
     IRResultType result;
 
     this->deltaT = 1.0;
-    IR_GIVE_OPTIONAL_FIELD(ir, this->deltaT, _IFT_StructuralMaterialEvaluator_deltat);
-    IR_GIVE_FIELD(ir, this->numberOfSteps, _IFT_StructuralMaterialEvaluator_numberOfTimeSteps);
+    IR_GIVE_OPTIONAL_FIELD(ir, this->deltaT, _IFT_Structural2dMaterialEvaluator_deltat);
+    IR_GIVE_FIELD(ir, this->numberOfSteps, _IFT_Structural2dMaterialEvaluator_numberOfTimeSteps);
 
-    //IR_GIVE_FIELD(ir, this->ndim, _IFT_StructuralMaterialEvaluator_nDimensions);
+    //IR_GIVE_FIELD(ir, this->ndim, _IFT_Structural2dMaterialEvaluator_nDimensions);
 
-    IR_GIVE_FIELD(ir, this->cmpntFunctions, _IFT_StructuralMaterialEvaluator_componentFunctions);
-    IR_GIVE_FIELD(ir, this->sControl, _IFT_StructuralMaterialEvaluator_stressControl);
-    this->keepTangent = ir->hasField(_IFT_StructuralMaterialEvaluator_keepTangent);
+    IR_GIVE_FIELD(ir, this->cmpntFunctions, _IFT_Structural2dMaterialEvaluator_componentFunctions);
+    IR_GIVE_FIELD(ir, this->sControl, _IFT_Structural2dMaterialEvaluator_stressControl);
+    this->keepTangent = ir->hasField(_IFT_Structural2dMaterialEvaluator_keepTangent);
 
     tolerance = 1.0;
     if ( this->sControl.giveSize() > 0 ) {
-        IR_GIVE_FIELD(ir, this->tolerance, _IFT_StructuralMaterialEvaluator_tolerance);
+        IR_GIVE_FIELD(ir, this->tolerance, _IFT_Structural2dMaterialEvaluator_tolerance);
     }
 
-    IR_GIVE_FIELD(ir, this->vars, _IFT_StructuralMaterialEvaluator_outputVariables);
+    IR_GIVE_FIELD(ir, this->vars, _IFT_Structural2dMaterialEvaluator_outputVariables);
 
     this->suppressOutput = true;
 
     // Compute the strain control (everything not controlled by stress)
-    for ( int i = 1; i <= 6; ++i ) {
+    for ( int i = 1; i <= 3; ++i ) {
         if ( !sControl.contains(i) ) {
             eControl.followedBy(i);
         }
@@ -89,12 +90,12 @@ IRResultType StructuralMaterialEvaluator :: initializeFrom(InputRecord *ir)
 }
 
 
-void StructuralMaterialEvaluator :: solveYourself()
+void Structural2dMaterialEvaluator :: solveYourself()
 {
     Domain *d = this->giveDomain(1);
 
-    MaterialMode mode = _3dMat;
-    FloatArray initialStrain(6);
+    MaterialMode mode = _PlaneStress;
+    FloatArray initialStrain(3);
     gps.clear();
     gps.reserve(d->giveNumberOfMaterialModels());
     for ( int i = 1; i <= d->giveNumberOfMaterialModels(); i++ ) {
@@ -198,7 +199,7 @@ void StructuralMaterialEvaluator :: solveYourself()
     this->outfile.close();
 }
 
-int StructuralMaterialEvaluator :: checkConsistency()
+int Structural2dMaterialEvaluator :: checkConsistency()
 {
     Domain *d = this->giveDomain(1);
     for ( auto &mat : d->giveMaterials() ) {
@@ -211,7 +212,7 @@ int StructuralMaterialEvaluator :: checkConsistency()
     return EngngModel :: checkConsistency();
 }
 
-void StructuralMaterialEvaluator :: doStepOutput(TimeStep *tStep)
+void Structural2dMaterialEvaluator :: doStepOutput(TimeStep *tStep)
 {
     FloatArray outputValue;
     Domain *d = this->giveDomain(1);
@@ -229,14 +230,14 @@ void StructuralMaterialEvaluator :: doStepOutput(TimeStep *tStep)
         Material *mat = d->giveMaterial(i);
         for ( int var : this->vars ) {
             mat->giveIPValue(outputValue, gps[i-1].get(), ( InternalStateType ) var, tStep);
-            outfile << " " << outputValue;
+            outfile << " " << std::scientific << std::setprecision(15) << outputValue;
         }
     }
 
     outfile << std :: endl;
 }
 
-TimeStep *StructuralMaterialEvaluator :: giveNextStep()
+TimeStep *Structural2dMaterialEvaluator :: giveNextStep()
 {
     if ( !currentStep ) {
         // first step -> generate initial step
