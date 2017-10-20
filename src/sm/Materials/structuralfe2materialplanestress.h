@@ -236,7 +236,13 @@ protected:
     bool useNumTangent;
     bool useExtStiff;
     bool allGPRes;
-    IntArray outputSelected;
+    /**
+     * FloatArray that contains element and Gauss point number for the desired results to be exported.
+     * The syntax in the input file should follow:
+     * output_selected_el_gp nrOfGaussPointsToExport elNumber.gpNumber (gpNumber as decimal)
+     * e.g. output_selected_el_gp 3 22.4 21.2 20.3 will export Gauss point 4 from el 22, Gauss point 2 from el 21 etc.
+     */
+    FloatArray outputSelected;
 
     double mRegCoeff;
     FloatMatrix givendStressdEpsTangent, givendBStressdEpsTangent, givendRStressdEpsTangent;

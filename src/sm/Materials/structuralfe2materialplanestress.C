@@ -142,16 +142,23 @@ StructuralFE2MaterialPlaneStress :: CreateStatus(GaussPoint *gp) const
     } else if ( !(outputSelected.giveSize() == 0) ) {
         int nel = gp->giveElement()->giveGlobalNumber();
         int gpn = gp->giveNumber();
-        //split the list
-        IntArray elements, GPs;
-        elements.resize(outputSelected.giveSize()/2);
-        GPs.resize(outputSelected.giveSize()/2);
-        for ( int i = 1; i <= outputSelected.giveSize()/2 ; i++ ) {
-            elements.at(i) = outputSelected.at(2*i-1);
-            GPs.at(i) = outputSelected.at(2*i);
+
+        float elgpndec = nel + gpn/10.0;
+
+        FloatArray tol;
+        bool flag = false;
+        tol.resize( outputSelected.giveSize() );
+        for ( int i=1; i <= outputSelected.giveSize(); i++ ) {
+            tol.at(i) = fabs(outputSelected.at(i) - elgpndec) ;
         }
 
-        if ( elements.contains(nel) && GPs.contains(gpn) )  {
+        for ( int i=1; i <= tol.giveSize(); i++) {
+            if ( tol.at(i) <= 1.E-5) {
+                flag = true;
+            }
+        }
+
+        if ( flag )  {
             return new StructuralFE2MaterialPlaneStressStatus(nel, gpn, this->giveDomain(), gp, this->inputfile);
         } else {
             return new StructuralFE2MaterialPlaneStressStatus(1, 1, this->giveDomain(), gp, this->inputfile);
