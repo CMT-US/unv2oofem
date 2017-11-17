@@ -176,6 +176,10 @@ int main(int argc, char *argv[])
     std :: string bc = argv[3];
     int tangentProblem = atoi(argv[4]);
 
+    printf("Input: %s\n", filename.c_str());
+    printf("Ouput basename: %s\n", name.c_str());
+    printf("BC type: %s\n", bc.c_str());
+    printf("tangent problem: %d\n", tangentProblem);
     // elname, w = _Hex21Stokes_Name, 3
     // elname, w = _Q27Space_Name, 3
     // elname, w = _IFT_LSpace_Name, 2
@@ -509,6 +513,8 @@ int main(int argc, char *argv[])
             myInput->setField(10, _IFT_TransportGradientPeriodic_masterSet);
 
             myData.insertInputRecord(DataReader::IR_bcRec, myInput);
+        } else {
+            OOFEM_ERROR("Unrecognized bc type, must be d, md, n, mn, or p");
         }
 
         // Fixing WC-only nodes
@@ -529,7 +535,7 @@ int main(int argc, char *argv[])
         myData.insertInputRecord(DataReader::IR_funcRec, myInput);
 
         timer.stopTimer();
-        printf("Mesh generation time %.3f s\n", timer.getUtime());
+        printf("Mesh generation time %.3f s\n", timer.getWtime());
         // Writing to file (to verify, and for backups)
         //myData.writeToFile((name + "_debug.in").c_str());
 
@@ -539,11 +545,13 @@ int main(int argc, char *argv[])
 
         myData.finish();
         timer.stopTimer();
-        printf("Instanciation time %.3f s\n", timer.getUtime());
+        printf("Instanciation time %.3f s\n", timer.getWtime());
     }
 
     //std::cin.get();
 
+    Timer timer;
+    timer.startTimer();
     printf("Starting analysis\n");
     if ( !tangentProblem ) {
         em->solveYourself();
@@ -571,6 +579,9 @@ int main(int argc, char *argv[])
         }
         fout.close();
     }
+
+    timer.stopTimer();
+    printf("Compute time %.3f s\n", timer.getWtime());
 
 #ifdef __PETSC_MODULE
     PetscFinalize();
