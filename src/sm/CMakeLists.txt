@@ -75,6 +75,7 @@ set (sm_element
     Elements/PlaneStress/basicelement.C
     Elements/PlaneStress/trplanestressrotallman3d.C
     Elements/PlaneStress/linquad3d_planestress.C
+    Elements/PlaneStress/qtrplstrslip.C
     Elements/AbaqusUserElement.C
     Elements/htselement.C
     Elements/latticestructuralelement.C
@@ -117,6 +118,8 @@ set (sm_boundary_conditions
     prescribedgradientdn.C
     prescribedgradientnn.C
     prescribedgradientsubbcs.C
+    prescribedfieldsgradientshomogenization.C
+    prescribedslipgradientsdd.C
     )
 
 set (sm_crosssection
@@ -145,6 +148,7 @@ set (sm_emodel
     EngineeringModels/incrementallinearstatic.C
     EngineeringModels/freewarping.C 
     EngineeringModels/structuralmaterialevaluator.C
+    EngineeringModels/structural2dmaterialevaluator.C
     EngineeringModels/qclinearstatic.C
     )
 

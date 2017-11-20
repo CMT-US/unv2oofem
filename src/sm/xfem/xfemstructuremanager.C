@@ -107,7 +107,7 @@ void XfemStructureManager :: giveInputRecord(DynamicInputRecord &input)
     }
 }
 
-int XfemStructureManager :: instanciateYourself(DataReader *dr)
+int XfemStructureManager :: instanciateYourself(DataReader &dr)
 {
     int result = XfemManager :: instanciateYourself(dr);
 
@@ -187,7 +187,7 @@ void XfemStructureManager :: splitCracks()
                             if ( fabs(arcPositions_i [ k ] - arcPositions_i [ k - 1 ]) > arcLengthTol ) {
                                 //printf("arcPositions.size(): %lu\n", arcPositions.size() );
 
-                                DynamicDataReader dataReader;
+                                DynamicDataReader dataReader("xfem-crack");
                                 crack_i->appendInputRecords(dataReader);
                                 // ... split crack i at the intersection and add intersection enrichment
                                 // fronts at the newly detected intersections.
@@ -199,7 +199,7 @@ void XfemStructureManager :: splitCracks()
 
                                 InputRecord *ir = dataReader.giveInputRecord(DataReader :: IR_enrichItemRec, i);
                                 newEI_1->initializeFrom(ir);
-                                newEI_1->instanciateYourself(& dataReader);
+                                newEI_1->instanciateYourself(dataReader);
 
                                 PolygonLine *new_pl = dynamic_cast< PolygonLine * >( newCrack->giveGeometry() );
                                 //                                EDCrack *ed = dynamic_cast<EDCrack*>( newEI_1->giveEnrichmentDomain() );

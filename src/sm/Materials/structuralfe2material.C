@@ -322,7 +322,7 @@ bool
 StructuralFE2MaterialStatus :: createRVE(int n, GaussPoint *gp, const std :: string &inputfile)
 {
     OOFEMTXTDataReader dr( inputfile.c_str() );
-    EngngModel *em = InstanciateProblem(& dr, _processor, 0); // Everything but nrsolver is updated.
+    EngngModel *em = InstanciateProblem(dr, _processor, 0); // Everything but nrsolver is updated.
     dr.finish();
     em->setProblemScale(microScale);
     em->checkProblemConsistency();
@@ -456,7 +456,7 @@ void StructuralFE2MaterialStatus :: copyStateVariables(const MaterialStatus &iSt
 
         XfemManager *ext_xMan = ext_domain->giveXfemManager();
         XfemManager *this_xMan = rve->giveDomain(1)->giveXfemManager();
-        DynamicDataReader dataReader;
+        DynamicDataReader dataReader("fe2");
         if ( ext_xMan != NULL ) {
 
             IRResultType result; // Required by IR_GIVE_FIELD macro
@@ -487,7 +487,7 @@ void StructuralFE2MaterialStatus :: copyStateVariables(const MaterialStatus &iSt
                 }
 
                 ei->initializeFrom(mir);
-                ei->instanciateYourself(&dataReader);
+                ei->instanciateYourself(dataReader);
                 eiList.push_back( std :: move(ei) );
 
             }

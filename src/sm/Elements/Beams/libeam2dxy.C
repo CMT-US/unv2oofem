@@ -50,7 +50,7 @@ namespace oofem {
 REGISTER_Element(LIBeam2dxy);
 
 // Set up interpolation coordinates
-FEI2dLineLin LIBeam2dxy :: interpolation(1, 3);
+FEI2dLineLin LIBeam2dxy :: interpolation(1, 2);
 
 LIBeam2dxy :: LIBeam2dxy(int n, Domain *aDomain) : StructuralElement(n, aDomain), LayeredCrossSectionInterface()
 {

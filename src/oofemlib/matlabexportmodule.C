@@ -58,6 +58,7 @@
 #include "prescribedgradientdn.h"
 #include "prescribedgradientnn.h"
 #include "prescribedgradientsubbcs.h"
+#include "prescribedslipgradientsdd.h"
 #include "floatarray.h"
     
 #ifdef __FM_MODULE
@@ -488,10 +489,10 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
 
     */
 
-    //hack to output an empty object if no boundary conditions are of the types defined below. @todo: fix that / adsci
+    //hack to output an empty object if no boundary conditions are of the types defined below. @todo: fix that
     fprintf(FID, "\tspecials=[];\n");
     // Output weak periodic boundary conditions
-    unsigned int wpbccount = 1, sbsfcount = 1, mcount = 1, pgbcncount=1, pgcount=1, pgddcount=1, pgdncount=1, pgnncount=1, pgsubcount=1;
+    unsigned int wpbccount = 1, sbsfcount = 1, mcount = 1, pgbcncount=1, pgcount=1, pgddcount=1, pgdncount=1, pgnncount=1, pgsubcount=1, psgddcount=1;
 
     for ( auto &gbc : domain->giveBcs() ) {
         WeakPeriodicBoundaryCondition *wpbc = dynamic_cast< WeakPeriodicBoundaryCondition * >( gbc.get() );
@@ -528,7 +529,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
             fprintf(FID, "];\n");
             mcount++;
         }
-         //output of homogenized stress for PrescribedGradientBCNeumann /adsci
+         //output of homogenized stress for PrescribedGradientBCNeumann
         PrescribedGradientBCNeumann *pgbcn = dynamic_cast<PrescribedGradientBCNeumann *> (gbc.get() );
         FloatArray stressN;
         if (pgbcn) {
@@ -540,7 +541,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
             fprintf(FID, "];\n");
             ++pgbcncount;
         }
-        //output of homogenized stress for PrescribedGradient /adsci
+        //output of homogenized stress for PrescribedGradient
         PrescribedGradient *pg = dynamic_cast<PrescribedGradient *> (gbc.get() );
         FloatArray stressD;
         if (pg) {
@@ -552,7 +553,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
             fprintf(FID, "];\n");
             ++pgcount;
         }
-        //output of homogenized stress for PrescribedGradientDD /adsci
+        //output of homogenized stress for PrescribedGradientDD
         PrescribedGradientDD *pgdd = dynamic_cast<PrescribedGradientDD *> (gbc.get() );
         FloatArray stressDD;
         if (pgdd) {
@@ -564,7 +565,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
             fprintf(FID, "];\n");
             ++pgddcount;
         }
-        //output of homogenized stress for PrescribedGradientDN /adsci
+        //output of homogenized stress for PrescribedGradientDN
         PrescribedGradientDN *pgdn = dynamic_cast<PrescribedGradientDN *> (gbc.get() );
         FloatArray stressDN;
         if (pgdn) {
@@ -576,7 +577,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
             fprintf(FID, "];\n");
             ++pgdncount;
         }
-        //output of homogenized stress for PrescribedGradientNN /adsci
+        //output of homogenized stress for PrescribedGradientNN
         PrescribedGradientNN *pgnn = dynamic_cast<PrescribedGradientNN *> (gbc.get() );
         FloatArray stressNN;
         if (pgnn) {
@@ -588,7 +589,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
             fprintf(FID, "];\n");
             ++pgnncount;
         }
-        //output of homogenized stress for PrescribedGradientSubBCs /adsci
+        //output of homogenized stress for PrescribedGradientSubBCs
         PrescribedGradientSubBCs *pgsub = dynamic_cast<PrescribedGradientSubBCs *> (gbc.get() );
         FloatArray stressSubBCs;
         if (pgsub) {
@@ -599,6 +600,30 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
             }
             fprintf(FID, "];\n");
             ++pgsubcount;
+        }
+        //output of homogenized stress, bond stress, and reinforcement stress for PrescribedSlipGradientsDD
+        PrescribedSlipGradientsDD *psgdd = dynamic_cast<PrescribedSlipGradientsDD *> (gbc.get() );
+        FloatArray stress, bStress, rStress;
+        if (psgdd) {
+            psgdd->computeStress(stress,tStep);
+            psgdd->computeTransferStress(bStress,tStep);
+            psgdd->computeReinfStress(rStress,tStep);
+            fprintf(FID, "\tspecials.prescribedslipgradientsdd{%u}.stress=[",psgddcount);
+            for (auto i: stress) {
+                fprintf(FID, "%.10e\t", i);
+            }
+            fprintf(FID,"];\n");
+            fprintf(FID, "\tspecials.prescibedslipgradientsdd{%u}.transferstress=[",psgddcount);
+            for (auto i: bStress) {
+                fprintf(FID, "%.10e\t", i);
+            }
+            fprintf(FID,"]; \n");
+            fprintf(FID,"\tspecials.prescribedslipgradientsdd{%u}.reinfstress=[",psgddcount);
+            for (auto i: rStress) {
+                fprintf(FID, "%.10e\t", i);
+            }
+            fprintf(FID,"]; \n");
+            ++psgddcount;
         }
     }
 }
