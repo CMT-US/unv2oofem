@@ -88,14 +88,14 @@ namespace bp = boost::python;
 #include "gausspoint.h"
 #include "internalstatetype.h"
 #include "matresponsemode.h"
-#include "Materials/structuralmaterial.h"
+#include "sm/Materials/structuralmaterial.h"
 #include "matstatus.h"
-#include "Materials/structuralms.h"
+#include "sm/Materials/structuralms.h"
 #include "exportmodulemanager.h"
 #include "outputmanager.h"
 #include "classfactory.h"
 
-#include "Materials/structmatsettable.h"
+#include "sm/Materials/structmatsettable.h"
 
 #include<iostream>
 
@@ -350,11 +350,10 @@ void pyclass_IntArray()
 *****************************************************/
 struct PySparseMtrx : SparseMtrx, wrapper<SparseMtrx>
 {
-    PySparseMtrx() : SparseMtrx() {}
-    PySparseMtrx(int n, int m): SparseMtrx(n,m) {}
+    PySparseMtrx(int n=0, int m=0): SparseMtrx(n,m) {}
 
-    SparseMtrx *GiveCopy() const {
-        return this->get_override("GiveCopy")();
+    std::unique_ptr<SparseMtrx> clone() const {
+        return this->get_override("clone")();
     }
 
     void times(const FloatArray &x, FloatArray &answer) const {
@@ -574,7 +573,7 @@ void pyclass_EngngModel()
 
 EngngModel *InstanciateProblem_1 (DataReader &dr, problemMode mode, int contextFlag)
 {
-    return InstanciateProblem(dr, mode, contextFlag);
+    return InstanciateProblem(dr, mode, contextFlag).release();
 }
 
 
@@ -630,8 +629,8 @@ struct PyDataReader : DataReader, wrapper<DataReader>
         this->get_override("finish")();
     }
 
-    const char *giveDataSourceName() const {
-        return this->get_override("giveDataSourceName")();
+    std :: string giveReferenceName() const {
+        return this->get_override("giveReferenceName")();
     }
 };
 
@@ -1488,13 +1487,7 @@ object engngModel(bp::tuple args, bp::dict kw)
     EngngModel *engngm = classFactory.createEngngModel(aClass.c_str(),number,master);
     if (engngm==NULL) { OOFEM_LOG_ERROR("engngModel: wrong input data"); }
     OOFEMTXTInputRecord ir = makeOOFEMTXTInputRecordFrom(kw);
-    engngm->initializeFrom(&ir);
     // instanciateYourself
-    if ( ir.hasField(_IFT_EngngModel_nmsteps) ) {
-        OOFEM_LOG_ERROR("engngModel: simulation with metasteps is not (yet) supported in Python");
-    } else {
-        engngm->instanciateDefaultMetaStep(&ir);
-    }
     ///@todo Output filename isn't stored like this (and has never been!)!?
     string outFile;
     if ( ir.hasField("outfile") ) {
@@ -1504,6 +1497,14 @@ object engngModel(bp::tuple args, bp::dict kw)
     }
     //engngm->Instanciate_init(outFile.c_str(), engngm->giveNumberOfDomains());
     engngm->letOutputBaseFileNameBe(outFile);
+    engngm->initializeFrom(&ir);
+
+    if ( ir.hasField(_IFT_EngngModel_nmsteps) ) {
+      OOFEM_LOG_ERROR("engngModel: simulation with metasteps is not (yet) supported in Python");
+    } else {
+      engngm->instanciateDefaultMetaStep(&ir);
+    }
+
     engngm->Instanciate_init();
     //
     object ret = object(ptr(engngm));

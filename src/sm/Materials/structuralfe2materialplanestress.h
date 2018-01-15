@@ -124,7 +124,7 @@ public:
     void computeTangent(TimeStep *tStep);
 
     /// Creates/Initiates the RVE problem.
-    bool createRVE(int n, int j, GaussPoint *gp, const std :: string &inputfile);
+    bool createRVE(int n, int j, const std :: string &inputfile);
 
     /// Copies time step data to RVE.
     void setTimeStep(TimeStep *tStep);

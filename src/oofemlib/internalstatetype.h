@@ -179,10 +179,11 @@ namespace oofem {
     ENUM_ITEM_WITH_VALUE(IST_MomentTensorTemp, 129) \
     ENUM_ITEM_WITH_VALUE(IST_YieldStrength, 130) \
     ENUM_ITEM_WITH_VALUE(IST_ElasticStrainTensor, 131) \
-    ENUM_ITEM_WITH_VALUE(IST_ShearSlip, 132) \
-    ENUM_ITEM_WITH_VALUE(IST_TransferStress, 133) \
-    ENUM_ITEM_WITH_VALUE(IST_ShearSlipGradient, 134) \
-    ENUM_ITEM_WITH_VALUE(IST_ReinforcementMembraneStress, 135)
+    ENUM_ITEM_WITH_VALUE(IST_MoistureContent, 132) \
+    ENUM_ITEM_WITH_VALUE(IST_ShearSlip, 133) \
+    ENUM_ITEM_WITH_VALUE(IST_TransferStress, 134) \
+    ENUM_ITEM_WITH_VALUE(IST_ShearSlipGradient, 135) \
+    ENUM_ITEM_WITH_VALUE(IST_ReinforcementMembraneStress, 136)
   
 /**
  * Type  representing the physical meaning of element or constitutive model internal variable.

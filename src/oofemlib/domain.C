@@ -96,9 +96,7 @@ Domain :: Domain(int n, int serNum, EngngModel *e) : defaultNodeDofIDArry(),
     // Constructor. Creates a new domain.
 {
     if ( !e->giveSuppressOutput() ) {
-        outputManager = std::unique_ptr<OutputManager> (new OutputManager(this) );
-    } else {
-        outputManager = NULL;
+        outputManager = std::make_unique<OutputManager>(this);
     }
 
     this->engineeringModel = e;
@@ -136,23 +134,23 @@ Domain :: clear()
     crossSectionList.clear();
     nonlocalBarrierList.clear();
     setList.clear();
-    xfemManager.reset(NULL);
-    contactManager.reset(NULL);
+    xfemManager = nullptr;
+    contactManager = nullptr;
     if ( connectivityTable ) {
         connectivityTable->reset();
     }
 
-    spatialLocalizer.reset(NULL);
+    spatialLocalizer = nullptr;
 
     if ( smoother ) {
         smoother->clear();
     }
 
     ///@todo bp: how to clear/reset topology data?
-    topology.reset(NULL);
+    topology = nullptr;
 
 #ifdef __PARALLEL_MODE
-    transactionManager.reset(NULL);
+    transactionManager = nullptr;
 #endif
 }
 
@@ -613,7 +611,7 @@ Domain :: instanciateYourself(DataReader &dr)
             // read type of set
             IR_GIVE_RECORD_KEYWORD_FIELD(ir, name, num);
             // Only one set for now (i don't see any need to ever introduce any other version)
-            std :: unique_ptr< Set > set(new Set(num, this)); //classFactory.createSet(name.c_str(), num, this)
+            std :: unique_ptr< Set > set = std::make_unique<Set>(num, this); //classFactory.createSet(name.c_str(), num, this)
             if ( !set ) {
                 OOFEM_ERROR("Couldn't create set: %s", name.c_str());
             }
@@ -847,7 +845,7 @@ Domain :: instanciateYourself(DataReader &dr)
             // read type of set
             IR_GIVE_RECORD_KEYWORD_FIELD(ir, name, num);
             // Only one set for now (i don't see any need to ever introduce any other version)
-            std :: unique_ptr< Set > set(new Set(num, this)); //classFactory.createSet(name.c_str(), num, this)
+            std :: unique_ptr< Set > set = std::make_unique<Set>(num, this); //classFactory.createSet(name.c_str(), num, this)
             if ( !set ) {
                 OOFEM_ERROR("Couldn't create set: %s", name.c_str());
             }
@@ -928,7 +926,7 @@ Domain :: instanciateYourself(DataReader &dr)
 
     if ( nfracman ) {
         ir = dr.giveInputRecord(DataReader :: IR_fracManRec, 1);
-        fracManager.reset( new FractureManager(this) );
+        fracManager = std::make_unique<FractureManager>(this);
         fracManager->initializeFrom(ir);
         fracManager->instanciateYourself(dr);
 #  ifdef VERBOSE
@@ -1174,7 +1172,7 @@ Domain :: giveConnectivityTable()
 //
 {
     if ( !connectivityTable ) {
-        connectivityTable.reset( new ConnectivityTable(this) );
+        connectivityTable = std::make_unique<ConnectivityTable>(this);
     }
 
     return connectivityTable.get();
@@ -1189,7 +1187,7 @@ Domain :: giveSpatialLocalizer()
 {
     //  if (spatialLocalizer == NULL) spatialLocalizer = new DummySpatialLocalizer(1, this);
     if ( !spatialLocalizer ) {
-        spatialLocalizer.reset( new OctreeSpatialLocalizer(this) );
+        spatialLocalizer = std::make_unique<OctreeSpatialLocalizer>(this);
     }
 
     spatialLocalizer->init();
@@ -1484,7 +1482,7 @@ void save_components(T &list, DataStream &stream, ContextMode mode)
     }
     for ( const auto &object: list ) {
         if ( ( mode & CM_Definition ) != 0 ) {
-            if ( stream.write( std :: string( object->giveInputRecordName() ) ) == 0 ) { \
+            if ( stream.write( std :: string( object->giveInputRecordName() ) ) == 0 ) {
                 THROW_CIOERR(CIO_IOERR);
             }
         }
@@ -1572,7 +1570,7 @@ Domain :: restoreContext(DataStream &stream, ContextMode mode)
         mDofManPlaceInArray.clear();
  
         ///@todo Saving and restoring xfemmanagers.
-        xfemManager.reset(NULL);
+        xfemManager = nullptr;
 
         restore_components(this->setList, stream, mode,
                            [this] (std::string &x, int i) { return new Set(i, this); });
@@ -1636,7 +1634,7 @@ DomainTransactionManager *
 Domain :: giveTransactionManager()
 {
     if ( !transactionManager ) {
-        transactionManager.reset( new DomainTransactionManager(this) );
+        transactionManager = std::make_unique<DomainTransactionManager>(this);
         if ( !transactionManager ) {
             OOFEM_ERROR("allocation failed");
         }
