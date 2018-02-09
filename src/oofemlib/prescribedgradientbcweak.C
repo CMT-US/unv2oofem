@@ -93,7 +93,7 @@ PrescribedGradientBCWeak :: PrescribedGradientBCWeak(int n, Domain *d) :
     mDuplicateCornerNodes(false),
     mTangDistPadding(0.0),
     mTracDofScaling(1.0e0),
-    mpDisplacementLock(NULL),
+    mpDisplacementLock(nullptr),
     mLockNodeInd(0),
     mDispLockScaling(1.0),
     mSpringNodeInd1(-1),
@@ -1090,7 +1090,7 @@ std :: shared_ptr< SparseMtrx > PrescribedGradientBCWeak :: giveKuu(IntArray &oL
 //    printf("Successfully casted rve to StaticStructural.\n");
 
         if ( rveStatStruct->stiffnessMatrix ) {
-            Kmicro.reset( rveStatStruct->stiffnessMatrix->GiveCopy() );
+            Kmicro = rveStatStruct->stiffnessMatrix->clone();
         }
     }
 

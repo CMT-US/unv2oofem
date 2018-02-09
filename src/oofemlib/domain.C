@@ -873,7 +873,7 @@ Domain :: instanciateYourself(DataReader &dr)
 #  endif
 
     if ( nxfemman ) {
-        ir = dr->giveInputRecord(DataReader :: IR_xfemManRec, 1);
+        ir = dr.giveInputRecord(DataReader :: IR_xfemManRec, 1);
 
         IR_GIVE_RECORD_KEYWORD_FIELD(ir, name, num);
         xfemManager.reset( classFactory.createXfemManager(name.c_str(), this) );
@@ -891,7 +891,7 @@ Domain :: instanciateYourself(DataReader &dr)
 
     if ( ncontactman ) {
         // don't read any input yet
-        ir = dr->giveInputRecord(DataReader :: IR_contactManRec, 1);
+        ir = dr.giveInputRecord(DataReader :: IR_contactManRec, 1);
 
         IR_GIVE_RECORD_KEYWORD_FIELD(ir, name, num);
         contactManager.reset( classFactory.createContactManager(name.c_str(), this) );
