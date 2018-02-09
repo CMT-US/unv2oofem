@@ -41,21 +41,21 @@
 
 #define _IFT_PlaneStress2dXfem_Name "planestress2dxfem"
 
+#define _IFT_PlaneStress2dXFEM_RegCoeff "reg_coeff"
+#define _IFT_PlaneStress2dXFEM_RegCoeffTol "reg_coeff_tol"
+
 namespace oofem {
-/**
- * Temporary class for testing
- * in the usual case instead of PlaneStress2dXfem
- * there will be the standard PlaneStress2d
- */
 class PlaneStress2dXfem : public PlaneStress2d, public XfemStructuralElementInterface, public VTKXMLExportModuleElementInterface
 {
 protected:
     virtual void updateYourself(TimeStep *tStep);
     virtual void postInitialize();
 
+    double mRegCoeff, mRegCoeffTol;
+
 public:
     /// Constructor
-    PlaneStress2dXfem(int n, Domain * d) : PlaneStress2d(n, d), XfemStructuralElementInterface(this), VTKXMLExportModuleElementInterface() { numberOfDofMans = 4; }
+    PlaneStress2dXfem(int n, Domain * d) : PlaneStress2d(n, d), XfemStructuralElementInterface(this), VTKXMLExportModuleElementInterface() { numberOfDofMans = 4; mRegCoeff = 1.0e-6; mRegCoeffTol = 1.0e-6;}
     /// Destructor
     virtual ~PlaneStress2dXfem() { }
 
@@ -95,6 +95,9 @@ public:
     virtual IRResultType initializeFrom(InputRecord *ir);
     virtual MaterialMode giveMaterialMode();
     virtual void giveInputRecord(DynamicInputRecord &input);
+
+    virtual int giveSpatialDimension() {return 2;}
+
 
     /// VTK Interface
     virtual void giveCompositeExportData(std::vector< VTKPiece > &vtkPieces, IntArray &primaryVarsToExport, IntArray &internalVarsToExport, IntArray cellVarsToExport, TimeStep *tStep);

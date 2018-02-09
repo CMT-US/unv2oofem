@@ -129,6 +129,7 @@ public:
 
     virtual void computeField(FloatArray &sigma, TimeStep *tStep);
     virtual void computeTangent(FloatMatrix &E, TimeStep *tStep);
+    std :: shared_ptr< SparseMtrx > giveKuu(IntArray &oLoc_u, TimeStep *tStep);
 
     virtual void assembleVector(FloatArray &answer, TimeStep *tStep,
                                 CharType type, ValueModeType mode,

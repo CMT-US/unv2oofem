@@ -63,6 +63,9 @@ public:
 
     virtual ~TrPlaneStress2dXFEM();
 
+    virtual int giveSpatialDimension() {return 2;}
+
+
     virtual int checkConsistency();
 
     virtual int testElementExtension(ElementExtension ext) { return ( ( ext == Element_EdgeLoadSupport ) ? 1 : 0 ); }
@@ -71,6 +74,7 @@ public:
 
     virtual const char *giveInputRecordName() const { return _IFT_TrPlaneStress2dXFEM_Name; }
     virtual const char *giveClassName() const { return "TrPlaneStress2dXFEM"; }
+    std :: string errorInfo(const char *func) const { return std :: string(giveClassName()) + func; }
 
     virtual int computeNumberOfDofs();
     virtual void computeGaussPoints();
@@ -108,6 +112,9 @@ public:
 
     /// VTK Interface
     virtual void giveCompositeExportData(std::vector< VTKPiece > &vtkPieces, IntArray &primaryVarsToExport, IntArray &internalVarsToExport, IntArray cellVarsToExport, TimeStep *tStep);
+
+
+    virtual int mapStateVariables(Domain &iOldDom, const TimeStep &iTStep);
 
 };
 } /* namespace oofem */

@@ -873,7 +873,7 @@ Domain :: instanciateYourself(DataReader &dr)
 #  endif
 
     if ( nxfemman ) {
-        ir = dr.giveInputRecord(DataReader :: IR_xfemManRec, 1);
+        ir = dr->giveInputRecord(DataReader :: IR_xfemManRec, 1);
 
         IR_GIVE_RECORD_KEYWORD_FIELD(ir, name, num);
         xfemManager.reset( classFactory.createXfemManager(name.c_str(), this) );
@@ -891,7 +891,7 @@ Domain :: instanciateYourself(DataReader &dr)
 
     if ( ncontactman ) {
         // don't read any input yet
-        ir = dr.giveInputRecord(DataReader :: IR_contactManRec, 1);
+        ir = dr->giveInputRecord(DataReader :: IR_contactManRec, 1);
 
         IR_GIVE_RECORD_KEYWORD_FIELD(ir, name, num);
         contactManager.reset( classFactory.createContactManager(name.c_str(), this) );
@@ -1403,6 +1403,35 @@ Domain :: giveSize()
     }
 
     return volume;
+}
+
+void
+Domain :: computeDomainBoundingBox(FloatArray &oLC, FloatArray &oUC)
+{
+    // Compute LC and UC by assuming a rectangular domain.
+	int numNodes = giveNumberOfDofManagers();
+    int nsd = giveNumberOfSpatialDimensions();
+
+    FloatArray lc = * ( giveDofManager(1)->giveCoordinates() );
+    FloatArray uc = * ( giveDofManager(1)->giveCoordinates() );
+
+    for ( int i = 1; i <= numNodes; i++ ) {
+        DofManager *dMan = giveDofManager(i);
+        const FloatArray &coord = * ( dMan->giveCoordinates() );
+
+        for ( int j = 0; j < nsd; j++ ) {
+            if ( coord [ j ] < lc [ j ] ) {
+                lc [ j ] = coord [ j ];
+            }
+
+            if ( coord [ j ] > uc [ j ] ) {
+                uc [ j ] = coord [ j ];
+            }
+        }
+    }
+
+    oLC = std::move(lc);
+    oUC = std::move(uc);
 }
 
 int

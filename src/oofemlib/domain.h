@@ -193,9 +193,7 @@ private:
 
     /// Contact Manager
     std :: unique_ptr< ContactManager > contactManager;
-
-    /// BC tracker (keeps track of BCs applied wia sets to components)
-    BCTracker bcTracker;
+    
     
     /**
      * Map from an element's global number to its place
@@ -583,6 +581,9 @@ public:
      * @return Total volume.
      */
     double giveSize();
+
+    void computeDomainBoundingBox(FloatArray &oLC, FloatArray &oUC);
+
 
     /**
      * Gives the next free dof ID.

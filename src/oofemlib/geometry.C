@@ -85,17 +85,22 @@ void BasicGeometry :: translate(const FloatArray &iTrans)
 }
 
 
-double BasicGeometry :: computeLineDistance(const FloatArray &iP1, const FloatArray &iP2, const FloatArray &iQ1, const FloatArray &iQ2)
+double BasicGeometry :: computeLineDistance(const FloatArray &iP1, const FloatArray &iP2, const FloatArray &iQ1, const FloatArray &iQ2, FloatArray *oIntersecPoint, bool *oIntersects)
 {
+	FloatArray intersec_point;
+	double intersec_rel_tol = 1.0e-6;
+
     FloatArray u;
     u.beDifferenceOf(iP2, iP1);
 
     const double LengthP = u.computeNorm();
 
+
     FloatArray v;
     v.beDifferenceOf(iQ2, iQ1);
     const double LengthQ = v.computeNorm();
 
+    double intersec_abs_tol = intersec_rel_tol*std::max(LengthP, LengthQ);
 
     // Regularization coefficients (to make it possible to solve when lines are parallel)
     const double c1 = (1.0e-14)*LengthP*LengthP;
@@ -213,6 +218,16 @@ double BasicGeometry :: computeLineDistance(const FloatArray &iP1, const FloatAr
 
     const double dist = d.computeNorm();
 
+    if(dist < intersec_abs_tol) {
+    	intersec_point = iP1;
+    	intersec_point.add(xi,u);
+
+    	if(oIntersecPoint != NULL && oIntersects != NULL) {
+    		*oIntersecPoint = intersec_point;
+    		*oIntersects = true;
+    	}
+    }
+
     return dist;
 }
 
@@ -297,6 +312,9 @@ int Line :: computeNumberOfIntersectionPoints(Element *element)
 
 void Line :: computeIntersectionPoints(Element *element, std :: vector< FloatArray > &oIntersectionPoints)
 {
+    const FloatArray &p1 = mVertices[0];
+    const FloatArray &p2 = mVertices[1];
+
     for ( int i = 1; i <= element->giveNumberOfDofManagers(); i++ ) {
         int n1 = i;
         int n2 = 0;
@@ -306,6 +324,19 @@ void Line :: computeIntersectionPoints(Element *element, std :: vector< FloatArr
             n2 = 1;
         }
 
+
+        const FloatArray &q1 = *(element->giveDofManager(n1)->giveCoordinates());
+        const FloatArray &q2 = *(element->giveDofManager(n2)->giveCoordinates());
+
+        FloatArray intersecPoint;
+        bool intersects = false;
+        computeLineDistance(p1, p2, q1, q2, &intersecPoint, &intersects);
+
+        if(intersects) {
+            oIntersectionPoints.push_back(intersecPoint);
+        }
+
+#if 0
         double lsn1 = computeDistanceTo( element->giveDofManager(n1)->giveCoordinates() );
         double lsn2 = computeDistanceTo( element->giveDofManager(n2)->giveCoordinates() );
         double lst1 = computeTangentialDistanceToEnd( element->giveDofManager(n1)->giveCoordinates() );
@@ -322,6 +353,7 @@ void Line :: computeIntersectionPoints(Element *element, std :: vector< FloatArr
                 oIntersectionPoints.push_back(answer);
             }
         }
+#endif
     }
 }
 

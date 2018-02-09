@@ -82,8 +82,8 @@ XfemStructuralElementInterface :: XfemStructuralElementInterface(Element *e) :
     mpCZMat(NULL),
     mCZMaterialNum(-1),
     mCSNumGaussPoints(4),
-	mIncludeBulkJump(true),
-	mIncludeBulkCorr(true)
+	mIncludeBulkJump(false),
+	mIncludeBulkCorr(false)
 {
 
 
@@ -1584,6 +1584,16 @@ XfemStructuralElementInterface :: initializeCZFrom(InputRecord *ir)
         mUsePlaneStrain = true;
     }
 
+    if( ir->hasField(_IFT_XfemStructuralElementInterface_IncludeBulkJump) ) {
+    	mIncludeBulkJump = true;
+//    	printf("Including bulk contribution to displacement jump.\n");
+    }
+
+    if( ir->hasField(_IFT_XfemStructuralElementInterface_IncludeBulkCorr) ) {
+    	mIncludeBulkCorr = true;
+//    	printf("Including bulk correction term.\n");
+    }
+
     return IRRT_OK;
 }
 
@@ -2034,7 +2044,7 @@ void XfemStructuralElementInterface :: computeIPAverageInTriangle(FloatArray &an
         for ( IntegrationPoint *ip: *iRule ) {
 
             FloatArray globCoord = ip->giveGlobalCoordinates();
-//            globCoord.resizeWithValues(2);
+            globCoord.resizeWithValues(3);
 
             if( iTri.pointIsInTriangle(globCoord) ) {
                 elem->giveIPValue(temp, ip, isType, tStep);
@@ -2046,6 +2056,51 @@ void XfemStructuralElementInterface :: computeIPAverageInTriangle(FloatArray &an
         answer.times(1. / gptot);
     }
 
+}
+
+int XfemStructuralElementInterface :: map_CZ_StateVariables(Domain &iOldDom, const TimeStep &iTStep)
+{
+    int result = 1;
+
+
+//    printf("mCZMaterialNum: %d\n", mCZMaterialNum );
+
+    if( mCZMaterialNum > 0 ) {
+        Set sourceElemSet = Set(0, & iOldDom);
+
+    	printf("Mapping CZ variables.\n");
+
+		int materialNum = mCZMaterialNum;
+		IntArray elWithMaterialNum = iOldDom.giveElementsWithMaterialNum(materialNum);
+		printf("elWithMaterialNum: "); elWithMaterialNum.printYourself();
+		sourceElemSet.setElementList( elWithMaterialNum );
+
+		for ( auto &iRule: mpCZIntegrationRules ) {
+			for ( GaussPoint *gp: *iRule ) {
+
+				MaterialStatus *ms = dynamic_cast< MaterialStatus * >( gp->giveMaterialStatus() );
+				if(!ms) {
+					StructuralElement *s_el = dynamic_cast<StructuralElement*>(element);
+					StructuralCrossSection *cs = s_el->giveStructuralCrossSection();
+					cs->createMaterialStatus(*gp);
+					ms = dynamic_cast<MaterialStatus*>( gp->giveMaterialStatus() );
+				}
+
+	//            if ( ms == NULL ) {
+	//                OOFEM_ERROR("failed to fetch MaterialStatus.");
+	//            }
+
+				MaterialStatusMapperInterface *interface = dynamic_cast< MaterialStatusMapperInterface * >(ms);
+				if ( interface == NULL ) {
+					OOFEM_ERROR("Failed to fetch MaterialStatusMapperInterface.");
+				}
+
+				result &= interface->MSMI_map_cz( *gp, iOldDom, sourceElemSet, iTStep, * ( ms ) );
+			}
+		}
+    }
+
+    return result;
 }
 
 } /* namespace oofem */

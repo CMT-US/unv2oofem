@@ -85,9 +85,9 @@ IRResultType XfemStructureManager :: initializeFrom(InputRecord *ir)
 
     IR_GIVE_OPTIONAL_FIELD(ir, mCrackMergeTol, _IFT_XfemStructureManager_crackMergeTol);
 
-    if ( mCrackMergeTol > 1.0e-12 ) {
-        printf("mCrackMergeTol: %e\n", mCrackMergeTol);
-    }
+//    if(mCrackMergeTol > 1.0e-12) {
+//    	printf("mCrackMergeTol: %e\n", mCrackMergeTol);
+//    }
 
     return XfemManager :: initializeFrom(ir);
 }

@@ -78,6 +78,10 @@ StructuralFE2Material :: initializeFrom(InputRecord *ir)
 
     useNumTangent = ir->hasField(_IFT_StructuralFE2Material_useNumericalTangent);
 
+    mRegCoeff = 0.0;
+    IR_GIVE_OPTIONAL_FIELD(ir, mRegCoeff, _IFT_StructuralFE2Material_RegCoeff);
+    printf("mRegCoeff: %e\n", mRegCoeff );
+
     return StructuralMaterial :: initializeFrom(ir);
 }
 
@@ -91,6 +95,8 @@ StructuralFE2Material :: giveInputRecord(DynamicInputRecord &input)
     if ( useNumTangent ) {
         input.setField(_IFT_StructuralFE2Material_useNumericalTangent);
     }
+
+    input.setField(mRegCoeff, _IFT_StructuralFE2Material_RegCoeff);
 }
 
 
@@ -109,10 +115,10 @@ StructuralFE2Material :: giveRealStressVector_3d(FloatArray &answer, GaussPoint 
     StructuralFE2MaterialStatus *ms = static_cast< StructuralFE2MaterialStatus * >( this->giveStatus(gp) );
 
 #if 0
-    XfemStructureManager *xMan = dynamic_cast<XfemStructureManager*>( ms->giveRVE()->giveDomain(1)->giveXfemManager() );
-    if(xMan) {
-        printf("Total crack length in RVE: %e\n", xMan->computeTotalCrackLength() );
-    }
+	XfemStructureManager *xMan = dynamic_cast<XfemStructureManager*>( ms->giveRVE()->giveDomain(1)->giveXfemManager() );
+	if(xMan) {
+		printf("Total crack length in RVE: %e\n", xMan->computeTotalCrackLength() );
+	}
 #endif
 
     ms->setTimeStep(tStep);
@@ -131,6 +137,41 @@ StructuralFE2Material :: giveRealStressVector_3d(FloatArray &answer, GaussPoint 
         StructuralMaterial::giveFullSymVectorForm(answer, stress, gp->giveMaterialMode() );
     }
 
+
+    ////////////////////////////////////////////////////////
+    // Viscous regularization
+
+	const FloatArray &oldStrain = ms->giveStrainVector();
+
+	FloatArray oldStrainFull = oldStrain;
+	if(oldStrainFull.giveSize() < 6) {
+		StructuralMaterial::giveFullSymVectorForm(oldStrainFull, oldStrain, gp->giveMaterialMode());
+	}
+
+	const FloatArray &newStrain = ms->giveTempStrainVector();
+	FloatArray newStrainFull = newStrain;
+	if(newStrainFull.giveSize() < 6) {
+		StructuralMaterial::giveFullSymVectorForm(newStrainFull, newStrain, gp->giveMaterialMode());
+	}
+
+	const double dt = tStep->giveTimeIncrement();
+//	printf("dt: %e\n", dt);
+
+	FloatArray strainRate;
+	strainRate.beDifferenceOf(newStrainFull, oldStrainFull);
+	strainRate.times(1./dt);
+
+
+	FloatArray strainRateFull = strainRate;
+	if(strainRate.giveSize() < answer.giveSize()) {
+		StructuralMaterial::giveFullSymVectorForm(strainRateFull, strainRate, gp->giveMaterialMode());
+	}
+
+	for( int i = 0;  i < answer.giveSize(); i++ ) {
+		answer(i) += (mRegCoeff)*strainRateFull(i);
+	}
+
+
     // Update the material status variables
     ms->letTempStressVectorBe(answer);
     ms->letTempStrainVectorBe(totalStrain);
@@ -144,7 +185,7 @@ StructuralFE2Material :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatR
     if ( useNumTangent ) {
         // Numerical tangent
         StructuralFE2MaterialStatus *status = static_cast<StructuralFE2MaterialStatus*>( this->giveStatus( gp ) );
-        double h = 1.0e-9;
+        double h = 1.0e-4;
 
         const FloatArray &epsRed = status->giveTempStrainVector();
         FloatArray eps;
@@ -174,6 +215,8 @@ StructuralFE2Material :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatR
                 answer.at(j,i) /= h;
             }
         }
+
+        status->setTangent(answer);
 
     } else {
 
@@ -211,6 +254,11 @@ StructuralFE2Material :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatR
 //            }
 //        }
 
+    	const double dt = tStep->giveTimeIncrement();
+
+    	for( int i = 0;  i < answer.giveNumberOfColumns(); i++ ) {
+    		answer(i,i) += (mRegCoeff/dt);
+    	}
 
 
 #if 0
@@ -250,10 +298,10 @@ StructuralFE2Material :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatR
 
 
 StructuralFE2MaterialStatus :: StructuralFE2MaterialStatus(int n, Domain * d, GaussPoint * g,  const std :: string & inputfile) :
-    StructuralMaterialStatus(n, d, g),
-    mNewlyInitialized(true)
+StructuralMaterialStatus(n, d, g),
+mNewlyInitialized(true)
 {
-    mInputFile = inputfile;
+	mInputFile = inputfile;
 
     this->oldTangent = true;
 
@@ -265,8 +313,8 @@ StructuralFE2MaterialStatus :: StructuralFE2MaterialStatus(int n, Domain * d, Ga
 
 PrescribedGradientHomogenization* StructuralFE2MaterialStatus::giveBC()
 {
-    this->bc = dynamic_cast< PrescribedGradientHomogenization * >( this->rve->giveDomain(1)->giveBc(1) );
-    return this->bc;
+	this->bc = dynamic_cast< PrescribedGradientHomogenization * >( this->rve->giveDomain(1)->giveBc(1) );
+	return this->bc;
 }
 
 

@@ -183,13 +183,13 @@ void PlaneStress2dXfem :: computeStiffnessMatrix(FloatMatrix &answer, MatRespons
     PlaneStress2d :: computeStiffnessMatrix(answer, rMode, tStep);
     XfemStructuralElementInterface :: computeCohesiveTangent(answer, tStep);
 
-    const double tol = 1.0e-6;
-    const double regularizationCoeff = 1.0e-6;
+    const double tol = mRegCoeffTol;
+    const double regularizationCoeff = mRegCoeff;
     int numRows = answer.giveNumberOfRows();
     for(int i = 0; i < numRows; i++) {
         if( fabs(answer(i,i)) < tol ) {
             answer(i,i) += regularizationCoeff;
-            //printf("Found zero on diagonal.\n");
+//          printf("Found zero on diagonal.\n");
         }
     }
 }
@@ -306,6 +306,18 @@ PlaneStress2dXfem :: initializeFrom(InputRecord *ir)
     }
 
     result = XfemStructuralElementInterface :: initializeCZFrom(ir);
+
+    if(ir->hasField(_IFT_PlaneStress2dXFEM_RegCoeff) ) {
+		ir->giveOptionalField(mRegCoeff, _IFT_PlaneStress2dXFEM_RegCoeff);
+    }
+//    printf("mRegCoeff: %e\n", mRegCoeff);
+
+    if(ir->hasField(_IFT_PlaneStress2dXFEM_RegCoeffTol) ) {
+		ir->giveOptionalField(mRegCoeffTol, _IFT_PlaneStress2dXFEM_RegCoeffTol);
+    }
+//    printf("mRegCoeffTol: %e\n", mRegCoeffTol);
+
+
     return result;
 }
 
@@ -318,6 +330,9 @@ void PlaneStress2dXfem :: giveInputRecord(DynamicInputRecord &input)
 {
     PlaneStress2d :: giveInputRecord(input);
     XfemStructuralElementInterface :: giveCZInputRecord(input);
+
+    input.setField(mRegCoeff, _IFT_PlaneStress2dXFEM_RegCoeff);
+    input.setField(mRegCoeffTol, _IFT_PlaneStress2dXFEM_RegCoeffTol);
 }
 
 void

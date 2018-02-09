@@ -93,6 +93,7 @@ PrescribedGradientBCWeak :: PrescribedGradientBCWeak(int n, Domain *d) :
     mDuplicateCornerNodes(false),
     mTangDistPadding(0.0),
     mTracDofScaling(1.0e0),
+    mpDisplacementLock(NULL),
     mLockNodeInd(0),
     mDispLockScaling(1.0),
     mSpringNodeInd1(-1),
@@ -1022,7 +1023,7 @@ void PrescribedGradientBCWeak :: computeTangent(FloatMatrix& E, TimeStep* tStep)
 //    Ered.printYourself();
 
     IntArray indx;
-    StructuralMaterial :: giveVoigtVectorMask(indx, _PlaneStress);
+    StructuralMaterial :: giveVoigtSymVectorMask(indx, _PlaneStress);
 
 //    FloatMatrix EredT;
 //    EredT.beTranspositionOf(Ered);
@@ -1043,6 +1044,98 @@ void PrescribedGradientBCWeak :: computeTangent(FloatMatrix& E, TimeStep* tStep)
 //    printf("Total time for RVE tangent: %e\n", tot_time);
 #endif
 
+}
+
+std :: shared_ptr< SparseMtrx > PrescribedGradientBCWeak :: giveKuu(IntArray &oLoc_u, TimeStep *tStep)
+{
+#ifdef TIME_INFO
+    static double tot_time = 0.0;
+    Timer timer;
+    timer.startTimer();
+
+    static double assemble_time = 0.0;
+    Timer assemble_timer;
+
+#endif
+
+
+    // Extract the relevant submatrices from the RVE problem.
+    // At equilibrium, the RVE problem has the structure
+    //
+    // [ S C; C^T 0 ]*[a_u a_t] = [0; f]
+    //
+    // where a_u and a_t denote displacement and traction dofs, respectively.
+    // We need to extract S and C.
+
+    EngngModel *rve = this->giveDomain()->giveEngngModel();
+    ///@todo Get this from engineering model
+    std :: unique_ptr< SparseLinearSystemNM > solver(
+        classFactory.createSparseLinSolver( ST_Petsc, this->domain, this->domain->giveEngngModel() ) ); // = rve->giveLinearSolver();
+    bool symmetric_matrix = false;
+    SparseMtrxType stype = solver->giveRecommendedMatrix(symmetric_matrix);
+//    double rve_size = this->domainSize();
+    //double Lx = mUC[0] - mLC[0];
+    //double Ly = mUC[1] - mLC[1];
+    //double rve_size = Lx*Ly;
+
+
+    EModelDefaultEquationNumbering fnum;
+    std :: unique_ptr< SparseMtrx > Kmicro( classFactory.createSparseMtrx(stype) );
+    if ( !Kmicro ) {
+        OOFEM_ERROR("Couldn't create sparse matrix of type %d\n", stype);
+    }
+
+    StaticStructural *rveStatStruct = dynamic_cast<StaticStructural*>(rve);
+    if ( rveStatStruct ) {
+//    printf("Successfully casted rve to StaticStructural.\n");
+
+        if ( rveStatStruct->stiffnessMatrix ) {
+            Kmicro.reset( rveStatStruct->stiffnessMatrix->GiveCopy() );
+        }
+    }
+
+
+#ifdef TIME_INFO
+    assemble_timer.startTimer();
+#endif
+
+    if ( Kmicro->giveNumberOfColumns() == 0 ) {
+//    printf("Rebuilding stiffness matrix.\n");
+        Kmicro->buildInternalStructure(rve, this->domain->giveNumber(), fnum);
+        rve->assemble(*Kmicro, tStep, TangentAssembler(TangentStiffness), fnum, this->domain);
+    }
+//    else {
+//        printf("Using existing stiffness matrix.\n");
+//    }
+
+    assembleExtraDisplock(*Kmicro, tStep, TangentStiffnessMatrix, fnum, fnum);
+#ifdef TIME_INFO
+    assemble_timer.stopTimer();
+    assemble_time += assemble_timer.getUtime();
+    printf("Assembly time for RVE tangent: %e\n", assemble_time);
+#endif
+
+
+    // Fetch displacement and traction location arrays
+    IntArray loc_u, loc_t;
+
+    giveTractionLocationArray(loc_t, fnum);
+
+    int neq = Kmicro->giveNumberOfRows();
+    loc_u.resize(neq - loc_t.giveSize());
+    int k = 1;
+    for ( int i = 1; i <= neq; i++ ) {
+        if ( !loc_t.contains(i) ) {
+            loc_u.at(k) = i;
+            k++;
+        }
+    }
+
+
+    // Fetch the submatrices
+    std :: shared_ptr< SparseMtrx > Kuu(Kmicro->giveSubMatrix(loc_u, loc_u));
+    oLoc_u = loc_u;
+    return Kuu;
 }
 
 void PrescribedGradientBCWeak :: giveTractionElNormal(size_t iElInd, FloatArray &oNormal, FloatArray &oTangent) const
@@ -1506,7 +1599,6 @@ void PrescribedGradientBCWeak :: giveMirroredPointOnGammaMinus(FloatArray &oPosM
 
 #if 1
 
-        const double distTol = 1.0e-12;
 //        bool mappingPerformed = false;
 
         FloatArray n = mPeriodicityNormal;
@@ -1515,10 +1607,19 @@ void PrescribedGradientBCWeak :: giveMirroredPointOnGammaMinus(FloatArray &oPosM
 
         double l_s = mUC[0] - mLC[0];
 
-        // Compute angle
-        double alpha = 0.0, a = 0.0;
-        if ( fabs(t(0)) > 1.0e-6 && fabs(t(1)) > 1.0e-6 ) {
-            alpha = atan(t(1)/t(0));
+//        const double distTol = 1.0e-12;
+        const double distTol = l_s*1.0e-6;
+
+		// Compute angle
+		double alpha = 0.0, a = 0.0;
+		if( fabs(t(0)) > 1.0e-6 && fabs(t(1)) > 1.0e-6 ) {
+			alpha = atan(t(1)/t(0));
+
+			// Keep alpha in the range [0,180]
+            if(alpha < 0.0) {
+            	alpha += M_PI;
+            }
+
 
             if ( alpha > 45.0*M_PI/180.0 ) {
                 a = l_s/tan(alpha);
@@ -1579,6 +1680,10 @@ void PrescribedGradientBCWeak :: giveMirroredPointOnGammaMinus(FloatArray &oPosM
 
         }
 
+        printf("iPosPlus: "); iPosPlus.printYourself();
+		OOFEM_ERROR("Mapping failed.")
+
+
 #else
 
 #endif
@@ -1629,6 +1734,11 @@ void PrescribedGradientBCWeak :: giveMirroredPointOnGammaPlus(FloatArray &oPosPl
         double alpha = 0.0, a = 0.0;
         if ( fabs(t(0)) > 1.0e-6 && fabs(t(1)) > 1.0e-6 ) {
             alpha = atan(t(1)/t(0));
+
+			// Keep alpha in the range [0,180]
+            if(alpha < 0.0) {
+            	alpha += M_PI;
+            }
 
             if ( alpha > 45.0*M_PI/180.0 ) {
                 a = l_s/tan(alpha);
@@ -1691,6 +1801,8 @@ void PrescribedGradientBCWeak :: giveMirroredPointOnGammaPlus(FloatArray &oPosPl
             }
 
         }
+
+        OOFEM_ERROR("PrescribedGradientBCWeak :: giveMirroredPointOnGammaPlus: Mapping failed.")
 #endif
     }
 //#endif
