@@ -1249,7 +1249,7 @@ void PrescribedGradientBCWeak :: createTractionMesh(bool iEnforceCornerPeriodici
 
     std :: vector< TracSegArray > tracElNew0, tracElNew1;
     tracElNew0.emplace_back();
-    //tracElNew1.emplace_back();
+    tracElNew1.emplace_back();
 
     for (size_t i = 1; i < holeCoordUnsorted.size(); i++) {
 
