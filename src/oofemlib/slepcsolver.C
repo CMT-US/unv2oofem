@@ -50,9 +50,9 @@ namespace oofem {
 REGISTER_GeneralizedEigenValueSolver(SLEPcSolver, GES_SLEPc);
 
 
-SLEPcSolver :: SLEPcSolver(Domain *d, EngngModel *m) : SparseGeneralEigenValueSystemNM(d, m)
-    A(nullptr),
-    B(nullptr),
+SLEPcSolver :: SLEPcSolver(Domain *d, EngngModel *m) : SparseGeneralEigenValueSystemNM(d, m),
+    A(NULL),
+    B(NULL),
     epsInit(false)
 {
 }
