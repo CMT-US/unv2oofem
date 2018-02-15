@@ -1260,9 +1260,9 @@ void PrescribedGradientBCWeak :: createTractionMesh(bool iEnforceCornerPeriodici
         const FloatArray xC = {0.5*(xS[0]+xE[0]), 0.5*(xS[1]+xE[1])};
 
         if ( arcPosFunc.calcArcPos(xC) < 2.*l_s ) {
-            tracElNew0[0].mInteriorSegments.emplace_back(xS, xE);
+            tracElNew0[0].mInteriorSegments.emplace_back( Line(xS, xE) );
         } else {
-            tracElNew1[0].mInteriorSegments.emplace_back(xS, xE);
+            tracElNew1[0].mInteriorSegments.emplace_back( Line(xS, xE) );
         }
     }
 

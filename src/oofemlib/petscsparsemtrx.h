@@ -46,7 +46,7 @@ namespace oofem {
  */
 class OOFEM_EXPORT PetscSparseMtrx : public SparseMtrx
 {
-protected:
+public:
     Mat mtrx;
     bool symmFlag;
     MatType mType;

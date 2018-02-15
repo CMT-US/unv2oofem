@@ -98,6 +98,9 @@ set (core_nm
     sparselinsystemnm.C
     sparsenonlinsystemnm.C
     nrsolver.C
+    trustregionsolver2.C
+    trustregionsolver3.C
+    trustregionsolver4.C
     dynamicrelaxationsolver.C
     linesearch.C
     calmls.C

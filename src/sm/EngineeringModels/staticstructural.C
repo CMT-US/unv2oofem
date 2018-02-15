@@ -73,6 +73,8 @@ StaticStructural :: StaticStructural(int i, EngngModel *_master) : StructuralEng
 {
     ndomains = 1;
     mRecomputeStepAfterPropagation = false;
+
+    previousIncrement.clear();
 }
 
 
@@ -135,6 +137,11 @@ StaticStructural :: initializeFrom(InputRecord *ir)
     this->initialGuessType = ( InitialGuess ) _val;
 
     mRecomputeStepAfterPropagation = ir->hasField(_IFT_StaticStructural_recomputeaftercrackpropagation);
+
+    result = XfemSolverInterface::initializeFrom(ir);
+    if ( result != IRRT_OK ) {
+        return result;
+    }
 
 #ifdef __PARALLEL_MODE
     ///@todo Where is the best place to create these?
@@ -336,6 +343,18 @@ void StaticStructural :: solveYourselfAt(TimeStep *tStep)
             this->field->update(VM_Total, tStep, this->solution, EModelDefaultEquationNumbering());
             this->field->applyBoundaryCondition(tStep); ///@todo Temporary hack to override the incorrect values that is set by "update" above. Remove this when that is fixed.
         }
+    } else if ( this->initialGuessType == IG_PreviousIncrement ) {
+//    	printf("initialGuessType == IG_PreviousIncrement.\n");
+
+    	// This check is of course not water proof, but it will work in most cases in practice.
+    	// The alternative would be to keep track of dofs that have changed (not worth the effort).
+    	if( previousIncrement.giveSize() == incrementOfSolution.giveSize() ) {
+    		incrementOfSolution = previousIncrement;
+    	}
+    	else {
+    		incrementOfSolution.zero();
+    	}
+
     } else if ( this->initialGuessType != IG_None ) {
         OOFEM_ERROR("Initial guess type: %d not supported", initialGuessType);
     } else {
@@ -389,8 +408,12 @@ void StaticStructural :: solveYourselfAt(TimeStep *tStep)
                                             currentIterations,
                                             tStep);
     }
+
+    previousIncrement = incrementOfSolution;
+
     if ( !( status & NM_Success ) ) {
-        OOFEM_ERROR("No success in solving problem");
+//        OOFEM_ERROR("No success in solving problem");
+    	printf("Warning: No success in solving problem.\n");
     }
 }
 

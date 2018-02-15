@@ -333,7 +333,8 @@ NRSolver :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
 
         if(maxInc > maxIncAllowed) {
             if ( engngModel->giveProblemScale() == macroScale ) {
-            	printf("Restricting increment. maxInc: %e\n", maxInc);
+            	double incRatio = maxIncAllowed/maxInc;
+            	printf("Restricting increment. maxInc: %e increment ratio: %e\n", maxInc, incRatio);
             }
         	ddX.times(maxIncAllowed/maxInc);
         }

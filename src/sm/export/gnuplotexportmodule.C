@@ -253,7 +253,8 @@ void GnuplotExportModule::outputReactionForces(TimeStep *tStep)
                 // Slightly dirty
                 BoundaryCondition *bc = dynamic_cast<BoundaryCondition*> (domain->giveBc(bcInd+1));
                 if ( bc != NULL ) {
-                    disp.at(bcInd+1) = std::max( disp.at(bcInd+1), bc->give(dof, VM_Total, tStep->giveTargetTime()) );
+//                    disp.at(bcInd+1) = std::max( disp.at(bcInd+1), bc->give(dof, VM_Total, tStep->giveTargetTime()) );
+                    disp.at(bcInd+1) = bc->give(dof, VM_Total, tStep->giveTargetTime());
                 }
                 ///@todo This function should be using the primaryfield instead of asking BCs directly. / Mikael
             }

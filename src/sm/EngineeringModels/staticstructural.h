@@ -83,11 +83,18 @@ protected:
 
     bool mRecomputeStepAfterPropagation;
 
+    /// Store previous increment for use as starting guess.
+    FloatArray previousIncrement;
+
 public:
     StaticStructural(int i, EngngModel * _master = NULL);
     virtual ~StaticStructural();
     virtual IRResultType initializeFrom(InputRecord *ir);
     virtual void updateAttributes(MetaStep *mStep);
+
+    void setInitialGuessType(int igType) { initialGuessType = InitialGuess(igType); }
+    void setPreviousIncrement(const FloatArray &iPreviousIncrement) {previousIncrement = iPreviousIncrement;}
+    FloatArray givePreviousIncrement() const {return previousIncrement;}
 
     virtual void solveYourself();
     virtual void solveYourselfAt(TimeStep *tStep);
