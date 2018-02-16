@@ -113,24 +113,15 @@ TrustRegionSolver4 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
     ddX.resize(neq);
     ddX.zero();
 
-
-//    double initial_res = 0.0;
     double old_res = 0.0;
-//    double sd_trial_res = 0.0;
     double newton_trial_res = 0.0;
     double eig_trial_res = 0.0;
 
-//    bool first_perturbation = true;
     FloatArray eig_vec, pert_eig_vec;
-//    double pert_tol = 1.0e2; // Worked well for mesh 1
-    double pert_tol = 2.0e2;
-//    double pert_tol = 5.0e2;
-
-//    bool recompute_eig_vec = false;
+    double pert_tol = 2.0e2; // Will depend on the properties of the problem. Hard coded for now.
 
     nite = 0;
     for ( nite = 0; ; ++nite ) {
-
 
         // Compute the residual
         engngModel->updateComponent(tStep, InternalRhs, domain);
@@ -141,14 +132,6 @@ TrustRegionSolver4 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
 
         // convergence check
         converged = this->checkConvergence(RT, F, rhs, ddX, X, RRT, internalForcesEBENorm, nite, errorOutOfRangeFlag);
-
-
-        if(nite == 0) {
-//        	initial_res = old_res;
-//	    	if ( engngModel->giveProblemScale() == macroScale ) {
-//	    		printf("initial_res: %e\n", initial_res);
-//	    	}
-        }
 
         if ( errorOutOfRangeFlag ) {
             status = NM_NoSuccess;
@@ -165,17 +148,11 @@ TrustRegionSolver4 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
         engngModel->updateComponent(tStep, NonLinearLhs, domain);
 
 
-
     	////////////////////////////////////////////////////////////////////////////
         // Step calculation: Solve trust-region subproblem
         A = dynamic_cast< PetscSparseMtrx * >(&k);
 
-
-
         // Check if k is positive definite
-
-
-
         double smallest_eig_val = 0.0;
 
         // Dirty hack for weakly periodic boundary conditions
@@ -203,35 +180,17 @@ TrustRegionSolver4 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
 
         double lambda = 0.0;
         if(smallest_eig_val < pert_tol) {
-        	lambda = 3.0*( pert_tol-1.0*smallest_eig_val );
+        	lambda = 3.0*( pert_tol-1.0*smallest_eig_val ); // The coefficient 3.0 will be problem dependent. Hard-coded for now.
         	addOnDiagonal(lambda, *A);
         }
 
-
         linSolver->solve(k, rhs, ddX);
-
-
-
-
-
-
 
     	if ( engngModel->giveProblemScale() == macroScale ) {
 			printf("smallest_eig_val: %e\n", smallest_eig_val );
     	}
 
 
-    	////////////////////////////////////////////////////////////////////////////
-        // Check residual of Newton update
-//        calcTrialRes(newton_trial_res, X, dX, ddX_newton, tStep, nite, iR, R, F, RT);
-
-
-//        double maxIncPrel = giveMaxAbs(ddX);
-
-
-
-    	////////////////////////////////////////////////////////////////////////////
-        // Check residual of eigenpoint
     	FloatArray ddX_eig;
     	eig_trial_res = 1.0e20;
         if( smallest_eig_val < pert_tol ) {
@@ -262,52 +221,23 @@ TrustRegionSolver4 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
         		c *= -1.0;
         	}
 
-//        	if(maxIncPrel >= mTrustRegionSize) {
-//
-//        		ddX.zero();
-//        		ddX.add( c, pert_eig_vec );
-//        		ddX_eig = ddX;
-////        		calcTrialRes(eig_trial_res, X, dX, ddX_eig, tStep, nite, iR, R, F, RT);
-//
-//
-////        		X.add(ddX_eig);
-////        		dX.add(ddX_eig);
-//
-//        	}
-//        	else {
-
-	//            ddX.zero();
-				ddX.add( c*1.0e-2, pert_eig_vec );
-	//        	ddX_eig = ddX;
-	//        	calcTrialRes(eig_trial_res, X, dX, ddX_eig, tStep, nite, iR, R, F, RT);
-	//
-	//
-	//            X.add(ddX_eig);
-	//            dX.add(ddX_eig);
-//        	}
+        	ddX.add( c*1.0e-2, pert_eig_vec );
         }
 
 
-            double maxInc = giveMaxAbs(ddX);
-            double increment_ratio_newton = 1.0;
-            clipToLimit(ddX, mTrustRegionSize, increment_ratio_newton);
-        	FloatArray ddX_newton = ddX;
+        double maxInc = giveMaxAbs(ddX);
+        double increment_ratio_newton = 1.0;
+        clipToLimit(ddX, mTrustRegionSize, increment_ratio_newton);
+        FloatArray ddX_newton = ddX;
 
-            if ( engngModel->giveProblemScale() == macroScale ) {
-            	if( increment_ratio_newton < 0.999 ) {
-            		printf("Restricting increment. maxInc: %e increment ratio: %e\n", maxInc, increment_ratio_newton);
-            	}
-            }
+        if ( engngModel->giveProblemScale() == macroScale ) {
+        	if( increment_ratio_newton < 0.999 ) {
+        		printf("Restricting increment. maxInc: %e increment ratio: %e\n", maxInc, increment_ratio_newton);
+        	}
+        }
 
-
-            X.add(ddX_newton);
-            dX.add(ddX_newton);
-
-//            calcTrialRes(newton_trial_res, X, dX, ddX_newton, tStep, nite, iR, R, F, RT);
-
-//        printf("old_res: %e newton_trial_res: %e eig_trial_res: %e sd_trial_res: %e\n", old_res, newton_trial_res, eig_trial_res, sd_trial_res );
-
-
+        X.add(ddX_newton);
+        dX.add(ddX_newton);
 
         updateTrustRegionSize(old_res, newton_trial_res, eig_trial_res);
 
@@ -335,80 +265,8 @@ TrustRegionSolver4 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
 
 void TrustRegionSolver4 :: updateTrustRegionSize(const double &iOldRes, const double &iNewtonTrialRes, const double &iEigTrialRes)
 {
-
-	// Keep the trus-region size fixed
+	// Keep the trust-region size fixed
 	return;
-
-#if 0
-	////////////////////////////////////////////////////////////////////////////
-    // Trust-region radius update
-    if(smallest_eig_val > 0.0) {
-
-    	double mEta1 = 0.0;
-		double mEta2 = 1.0;
-
-		if( rho_k >= mEta2  ) {
-
-			if ( engngModel->giveProblemScale() == macroScale ) {
-//				printf("rho_k >= mEta2.\n");
-				printf("Very successful update.\n");
-			}
-
-			// Parameter on p.782 in Conn et al.
-			double alpha1 = 1.5;
-
-//				if(nite > mFixIterSize) {
-				if ( alpha1*maxInc > mTrustRegionSize ) {
-					mTrustRegionSize = alpha1*mTrustRegionSize;
-					if ( engngModel->giveProblemScale() == macroScale ) {
-						printf("Expanding trust-region size.\n");
-					}
-				}
-//				}
-
-			if ( engngModel->giveProblemScale() == macroScale ) {
-				printf("mTrustRegionSize: %e\n", mTrustRegionSize );
-			}
-
-		}
-		else {
-			if( rho_k >= mEta1 && rho_k < mEta2  ) {
-
-				if ( engngModel->giveProblemScale() == macroScale ) {
-//					printf("rho_k >= mEta1 && rho_k < mEta2.\n");
-
-					printf("Successful update.\n");
-					printf("Keeping trust-region size.\n");
-//
-					printf("mTrustRegionSize: %e\n", mTrustRegionSize );
-				}
-			}
-			else {
-
-//				if(lambda < 1.0e-3 || true) {
-				int mFixIterSize = 0;
-				if(nite > mFixIterSize) {
-
-					if ( engngModel->giveProblemScale() == macroScale ) {
-
-						printf("Unsuccessful update.\n");
-						printf("Contracting trust-region.\n");
-					}
-
-					// Parameter on p.782 in Conn et al.
-					double alpha2 = 0.5;
-
-					mTrustRegionSize = alpha2*mTrustRegionSize;
-				}
-
-				if ( engngModel->giveProblemScale() == macroScale ) {
-					printf("mTrustRegionSize: %e\n", mTrustRegionSize );
-				}
-			}
-
-		}
-    }
-#endif
 }
 
 double TrustRegionSolver4 :: giveMaxAbs(const FloatArray &iVec) const
@@ -772,7 +630,6 @@ void TrustRegionSolver4::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
     double eig_rtol = 1.0e-4;
     int max_iter = 1000;
     int nroot = 10;
-//    int size = K.giveNumberOfRows();
 
     if ( !epsInit ) {
         /*
@@ -785,39 +642,35 @@ void TrustRegionSolver4::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
 #endif
         ierr = EPSCreate(comm, & eps);
         checkPetscError(ierr);
-//        CHKERRQ(ierr);
+
         epsInit = true;
     }
 
     ierr = EPSSetOperators( eps, * K.giveMtrx(), NULL );
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
 
     ierr = EPSSetProblemType(eps, EPS_NHEP);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
 
     ierr = EPSGetST(eps, & st);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
 
+//    ierr = STSetType(st, STCAYLEY);
 //    ierr = STSetType(st, STSINVERT);
-        ierr = STSetType(st, STSHIFT);
+    ierr = STSetType(st, STSHIFT);
         checkPetscError(ierr);
-//        ierr = STSetType(st, STCAYLEY);
-//    CHKERRQ(ierr);
+
     ierr = STSetMatStructure(st, SAME_NONZERO_PATTERN);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
+
     ierr = EPSSetTolerances(eps, ( PetscReal ) eig_rtol, max_iter);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
+
     ierr = EPSSetDimensions(eps, ( PetscInt ) nroot, PETSC_DECIDE, PETSC_DECIDE);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
+
     ierr = EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
 
 
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -828,44 +681,34 @@ void TrustRegionSolver4::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
 
     ierr = EPSSolve(eps);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
 
     ierr = EPSGetConvergedReason(eps, & eig_reason);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
+
     ierr = EPSGetIterationNumber(eps, & eig_nite);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
 //    printf("SLEPcSolver::solve EPSConvergedReason: %d, number of iterations: %d\n", eig_reason, eig_nite);
 
     ierr = EPSGetConverged(eps, & eig_nconv);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
 
     double smallest_eig_val = 1.0e20;
 
     if ( eig_nconv > 0 ) {
 //        printf("SLEPcSolver :: solveYourselfAt: Convergence reached for RTOL=%20.15f\n", eig_rtol);
 
-#if 1
-        FloatArray eig_vals(nroot);
+    	FloatArray eig_vals(nroot);
         PetscScalar kr;
         Vec Vr;
 
         K.createVecGlobal(& Vr);
-//        ierr = MatGetVecs(* K.giveMtrx(), PETSC_NULL, & Vr);
-//        checkPetscError(ierr);
-//            CHKERRQ(ierr);
 
-            FloatArray Vr_loc;
+        FloatArray Vr_loc;
 
-//        printf("\n\n");
         for ( int i = 0; i < eig_nconv && i < nroot; i++ ) {
         	// PetscErrorCode EPSGetEigenpair(EPS eps,PetscInt i,PetscScalar *eigr,PetscScalar *eigi,Vec Vr,Vec Vi)
-//            ierr = EPSGetEigenpair(eps, eig_nconv - i - 1, & kr, PETSC_NULL, Vr, PETSC_NULL);
-            ierr = EPSGetEigenpair(eps, i, & kr, PETSC_NULL, Vr, PETSC_NULL);
+        	ierr = EPSGetEigenpair(eps, i, & kr, PETSC_NULL, Vr, PETSC_NULL);
             checkPetscError(ierr);
-//            CHKERRQ(ierr);
 
             //Store the eigenvalue
             eig_vals(i) = kr;
@@ -877,21 +720,11 @@ void TrustRegionSolver4::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
             	oEigVec = Vr_loc;
             }
 
-//            printf("i: %d ev: %e\n", i, kr);
         }
-
-        //Store the eigenvector
-//        for ( int j = 0; j < size; j++ ) {
-//            _r.at(j + 1, i + 1) = Vr_loc.at(j + 1);
-//        }
 
         ierr = VecDestroy(& Vr);
         checkPetscError(ierr);
-//        printf("Vr_loc: "); Vr_loc.printYourself();
 
-//        printf("\n\n");
-
-#endif
     } else {
 //        OOFEM_ERROR("No converged eigenpairs.\n");
     	printf("Warning: No converged eigenpairs.\n");
@@ -904,46 +737,33 @@ void TrustRegionSolver4::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
 
 void TrustRegionSolver4::addOnDiagonal(const double &iVal, PetscSparseMtrx &K) {
 
-#if 1
+	int N = K.giveNumberOfRows();
 
-    	int N = K.giveNumberOfRows();
+	Vec petsc_mat_diag;
+	VecCreate(PETSC_COMM_SELF, & petsc_mat_diag);
+	VecSetType(petsc_mat_diag, VECSEQ);
+	VecSetSizes(petsc_mat_diag, PETSC_DECIDE, N);
 
-    	Vec petsc_mat_diag;
-        VecCreate(PETSC_COMM_SELF, & petsc_mat_diag);
-        VecSetType(petsc_mat_diag, VECSEQ);
-        VecSetSizes(petsc_mat_diag, PETSC_DECIDE, N);
-
-    	MatGetDiagonal(K.mtrx, petsc_mat_diag);
+	MatGetDiagonal(K.mtrx, petsc_mat_diag);
 
 
-//    	VecScale(petsc_mat_diag, coeff);
-//            	VecScale(petsc_mat_diag, 1.0 + coeff);
-//    	double coeff = 0.0e3;
-    	for(int i = 0; i < N; i++) {
+	for(int i = 0; i < N; i++) {
 
+		// More dirty hacking...
+		// If the diagonal value is very close to zero, it is
+		// probably a Lagrange multiplier row. Don't add anything
+		// to such rows.
 
-    		// More dirty hacking...
-    		// If the diagonal value is very close to zero, it is
-    		// probably a Lagrange multiplier row. Don't add anything
-    		// to such rows.
+		double a = 0.0;
 
-    		double a = 0.0;
+		VecGetValues(petsc_mat_diag, 1, &i, &a);
 
-    		VecGetValues(petsc_mat_diag, 1, &i, &a);
+		VecSetValue(petsc_mat_diag, i, iVal, ADD_VALUES);
+	}
 
-//    		if( fabs(a) > 1.0e-3 ) {
-    			VecSetValue(petsc_mat_diag, i, iVal, ADD_VALUES);
-//    		}
-    	}
-//    	printf("coeff: %e\n", coeff );
+	MatDiagonalSet(K.mtrx, petsc_mat_diag, INSERT_VALUES);
 
-    	MatDiagonalSet(K.mtrx, petsc_mat_diag, INSERT_VALUES);
-
-        VecDestroy(& petsc_mat_diag);
-
-#endif
-
-
+	VecDestroy(& petsc_mat_diag);
 }
 
 

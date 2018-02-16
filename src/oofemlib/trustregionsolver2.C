@@ -161,7 +161,6 @@ TrustRegionSolver2 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
     ddX.zero();
 
 
-//    double initial_res = 0.0;
     double old_res = 0.0;
     double trial_res = 0.0;
 
@@ -169,11 +168,9 @@ TrustRegionSolver2 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
     FloatArray eig_vec, pert_eig_vec;
     double pert_tol = 0.0e1;
 
-//    bool recompute_eig_vec = false;
 
     nite = 0;
     for ( nite = 0; ; ++nite ) {
-
 
         // Compute the residual
         engngModel->updateComponent(tStep, InternalRhs, domain);
@@ -184,13 +181,6 @@ TrustRegionSolver2 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
         // convergence check
         converged = this->checkConvergence(RT, F, rhs, ddX, X, RRT, internalForcesEBENorm, nite, errorOutOfRangeFlag);
 
-
-//        if(nite == 0) {
-//        	initial_res = old_res;
-////	    	if ( engngModel->giveProblemScale() == macroScale ) {
-////	    		printf("initial_res: %e\n", initial_res);
-////	    	}
-//        }
 
         if ( errorOutOfRangeFlag ) {
             status = NM_NoSuccess;
@@ -213,10 +203,7 @@ TrustRegionSolver2 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
         A = dynamic_cast< PetscSparseMtrx * >(&k);
 
 
-
         // Check if k is positive definite
-
-
 
         double smallest_eig_val = 0.0;
 
@@ -257,10 +244,6 @@ TrustRegionSolver2 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
 			printf("min_eig_val: %e i: %d\n", min_eig_val, min_eig_val_index );
 			smallest_eig_val = min_eig_val;
 
-//			if( smallest_eig_val > 0.0 && smallest_eig_val < 1.0e2 ) {
-//				smallest_eig_val = -1.0e2;
-//			}
-
         }
         else {
             calcSmallestEigVal(smallest_eig_val, eig_vec, *A);
@@ -279,16 +262,6 @@ TrustRegionSolver2 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
         // Constrain the increment to stay within the trust-region
 
         double increment_ratio = 1.0;
-//        double ddX_norm = ddX.computeNorm();
-//        if(ddX_norm > mTrustRegionSize) {
-//        	ddX.times(mTrustRegionSize/ddX_norm);
-//
-//	    	if ( engngModel->giveProblemScale() == macroScale ) {
-//	    		printf("Restricting increment to stay in trust region.\n");
-//	    	}
-//
-//        	increment_ratio = mTrustRegionSize/ddX_norm;
-//        }
 
 
         double maxInc = 0.0;
@@ -318,7 +291,6 @@ TrustRegionSolver2 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
 
         	if(first_perturbation ) {
 				pert_eig_vec = eig_vec;
-//				printf("pert_eig_vec: "); pert_eig_vec.printYourself();
 
 	        	// Rescale eigenvector such that the L_inf norm is 1.
 				double max_eig_vec = 0.0;
@@ -355,13 +327,6 @@ TrustRegionSolver2 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
 //			printf("increment_ratio: %e\n", increment_ratio);
     	}
 
-        /////////////////////////////////////////
-
-
-        /////////////////////////////////////////
-
-
-
 
         X.add(ddX);
         dX.add(ddX);
@@ -382,10 +347,6 @@ TrustRegionSolver2 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
     	if ( engngModel->giveProblemScale() == macroScale ) {
 //    		printf("rho_k: %e\n", rho_k);
     	}
-
-
-
-
 
 
 
@@ -424,29 +385,22 @@ TrustRegionSolver2 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
 				if( rho_k >= mEta1 && rho_k < mEta2  ) {
 
 					if ( engngModel->giveProblemScale() == macroScale ) {
-	//					printf("rho_k >= mEta1 && rho_k < mEta2.\n");
 
 						printf("Successful update.\n");
-						printf("Keeping trust-region size.\n");
-	//
 						printf("mTrustRegionSize: %e\n", mTrustRegionSize );
 					}
 				}
 				else {
 
-	//				if(lambda < 1.0e-3 || true) {
 					if(nite > mFixIterSize) {
 
 						if ( engngModel->giveProblemScale() == macroScale ) {
-	//						printf("rho_k < mEta1.\n");
 
 							printf("Unsuccessful update.\n");
 							printf("Contracting trust-region.\n");
 						}
 
 						// Parameter on p.782 in Conn et al.
-		//				double alpha2 = 0.25;
-	//					double alpha2 = 0.5;
 						double alpha2 = 0.5;
 
 						mTrustRegionSize = alpha2*mTrustRegionSize;
@@ -511,7 +465,6 @@ TrustRegionSolver2 :: checkConvergence(FloatArray &RT, FloatArray &F, FloatArray
                              double RRT, const FloatArray &internalForcesEBENorm,
                              int nite, bool &errorOutOfRange, bool printToScreen)
 {
-//	printf("Entering TrustRegionSolver :: checkConvergence.\n");
 
     double forceErr, dispErr;
     FloatArray dg_forceErr, dg_dispErr, dg_totalLoadLevel, dg_totalDisp;
@@ -812,7 +765,6 @@ void TrustRegionSolver2::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
     double eig_rtol = 1.0e-6;
     int max_iter = 1000;
     int nroot = 1;
-//    int size = K.giveNumberOfRows();
 
     if ( !epsInit ) {
         /*
@@ -825,39 +777,34 @@ void TrustRegionSolver2::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
 #endif
         ierr = EPSCreate(comm, & eps);
         checkPetscError(ierr);
-//        CHKERRQ(ierr);
         epsInit = true;
     }
 
     ierr = EPSSetOperators( eps, * K.giveMtrx(), NULL );
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
 
     ierr = EPSSetProblemType(eps, EPS_NHEP);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
 
     ierr = EPSGetST(eps, & st);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
 
-//    ierr = STSetType(st, STSINVERT);
+//        ierr = STSetType(st, STCAYLEY);
         ierr = STSetType(st, STSHIFT);
         checkPetscError(ierr);
-//        ierr = STSetType(st, STCAYLEY);
-//    CHKERRQ(ierr);
+
     ierr = STSetMatStructure(st, SAME_NONZERO_PATTERN);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
+
     ierr = EPSSetTolerances(eps, ( PetscReal ) eig_rtol, max_iter);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
+
     ierr = EPSSetDimensions(eps, ( PetscInt ) nroot, PETSC_DECIDE, PETSC_DECIDE);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
+
     ierr = EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
+
 
 
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -867,43 +814,35 @@ void TrustRegionSolver2::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
     int eig_nconv, eig_nite;
 
     ierr = EPSSolve(eps);
-//    CHKERRQ(ierr);
+    checkPetscError(ierr);
 
     ierr = EPSGetConvergedReason(eps, & eig_reason);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
+
     ierr = EPSGetIterationNumber(eps, & eig_nite);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
 //    printf("SLEPcSolver::solve EPSConvergedReason: %d, number of iterations: %d\n", eig_reason, eig_nite);
 
     ierr = EPSGetConverged(eps, & eig_nconv);
     checkPetscError(ierr);
-//    CHKERRQ(ierr);
 
     double smallest_eig_val = 1.0e20;
 
     if ( eig_nconv > 0 ) {
 //        printf("SLEPcSolver :: solveYourselfAt: Convergence reached for RTOL=%20.15f\n", eig_rtol);
 
-#if 1
         FloatArray eig_vals(nroot);
         PetscScalar kr;
         Vec Vr;
 
         K.createVecGlobal(& Vr);
-//        ierr = MatGetVecs(* K.giveMtrx(), PETSC_NULL, & Vr);
-//            CHKERRQ(ierr);
 
-            FloatArray Vr_loc;
+        FloatArray Vr_loc;
 
-//        printf("\n\n");
         for ( int i = 0; i < eig_nconv && i < nroot; i++ ) {
-        	// PetscErrorCode EPSGetEigenpair(EPS eps,PetscInt i,PetscScalar *eigr,PetscScalar *eigi,Vec Vr,Vec Vi)
-//            ierr = EPSGetEigenpair(eps, eig_nconv - i - 1, & kr, PETSC_NULL, Vr, PETSC_NULL);
-            ierr = EPSGetEigenpair(eps, i, & kr, PETSC_NULL, Vr, PETSC_NULL);
+
+        	ierr = EPSGetEigenpair(eps, i, & kr, PETSC_NULL, Vr, PETSC_NULL);
             checkPetscError(ierr);
-//            CHKERRQ(ierr);
 
             //Store the eigenvalue
             eig_vals(i) = kr;
@@ -915,21 +854,12 @@ void TrustRegionSolver2::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
             	oEigVec = Vr_loc;
             }
 
-//            printf("i: %d ev: %e\n", i, kr);
         }
-
-        //Store the eigenvector
-//        for ( int j = 0; j < size; j++ ) {
-//            _r.at(j + 1, i + 1) = Vr_loc.at(j + 1);
-//        }
 
         ierr = VecDestroy(& Vr);
         checkPetscError(ierr);
-//        printf("Vr_loc: "); Vr_loc.printYourself();
 
-//        printf("\n\n");
 
-#endif
     } else {
 //        OOFEM_ERROR("No converged eigenpairs.\n");
     	printf("Warning: No converged eigenpairs.\n");
@@ -940,46 +870,34 @@ void TrustRegionSolver2::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
 
 void TrustRegionSolver2::addOnDiagonal(const double &iVal, PetscSparseMtrx &K) {
 
-#if 1
+	int N = K.giveNumberOfRows();
 
-    	int N = K.giveNumberOfRows();
+	Vec petsc_mat_diag;
+	VecCreate(PETSC_COMM_SELF, & petsc_mat_diag);
+	VecSetType(petsc_mat_diag, VECSEQ);
+	VecSetSizes(petsc_mat_diag, PETSC_DECIDE, N);
 
-    	Vec petsc_mat_diag;
-        VecCreate(PETSC_COMM_SELF, & petsc_mat_diag);
-        VecSetType(petsc_mat_diag, VECSEQ);
-        VecSetSizes(petsc_mat_diag, PETSC_DECIDE, N);
-
-    	MatGetDiagonal(K.mtrx, petsc_mat_diag);
+	MatGetDiagonal(K.mtrx, petsc_mat_diag);
 
 
-//    	VecScale(petsc_mat_diag, coeff);
-//            	VecScale(petsc_mat_diag, 1.0 + coeff);
-//    	double coeff = 0.0e3;
-    	for(int i = 0; i < N; i++) {
+	for(int i = 0; i < N; i++) {
 
+		// More dirty hacking...
+		// If the diagonal value is very close to zero, it is
+		// probably a Lagrange multiplier row. Don't add anything
+		// to such rows.
 
-    		// More dirty hacking...
-    		// If the diagonal value is very close to zero, it is
-    		// probably a Lagrange multiplier row. Don't add anything
-    		// to such rows.
+		double a = 0.0;
 
-    		double a = 0.0;
+		VecGetValues(petsc_mat_diag, 1, &i, &a);
 
-    		VecGetValues(petsc_mat_diag, 1, &i, &a);
+		VecSetValue(petsc_mat_diag, i, iVal, ADD_VALUES);
 
-//    		if( fabs(a) > 1.0e-3 ) {
-    			VecSetValue(petsc_mat_diag, i, iVal, ADD_VALUES);
-//    		}
-    	}
-//    	printf("coeff: %e\n", coeff );
+	}
 
-    	MatDiagonalSet(K.mtrx, petsc_mat_diag, INSERT_VALUES);
+	MatDiagonalSet(K.mtrx, petsc_mat_diag, INSERT_VALUES);
 
-        VecDestroy(& petsc_mat_diag);
-
-#endif
-
-
+	VecDestroy(& petsc_mat_diag);
 }
 
 
