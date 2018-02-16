@@ -43,6 +43,7 @@ public:
     bool checkConvergence(FloatArray &RT, FloatArray &F, FloatArray &rhs, FloatArray &ddX, FloatArray &X,
                           double RRT, const FloatArray &internalForcesEBENorm, int nite, bool &errorOutOfRange, bool printToScreen = true);
 
+    void checkPetscError(PetscErrorCode iErrorCode) const;
     void calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec, PetscSparseMtrx &K);
 
     void addOnDiagonal(const double &iVal, PetscSparseMtrx &K);

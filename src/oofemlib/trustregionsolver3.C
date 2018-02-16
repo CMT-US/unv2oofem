@@ -45,9 +45,9 @@ mEta2(10.0),
 mGamma1(0.5),
 mGamma2(0.5),
 mTrustRegionSize(1.0e-3),
-epsInit(false),
 mBeta(0.5),
-mEigVecRecalc(100)
+mEigVecRecalc(100),
+epsInit(false)
 {
 
 //	mEta1(0.01),
@@ -138,7 +138,7 @@ TrustRegionSolver3 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
     ddX.zero();
 
 
-    double initial_res = 0.0;
+//    double initial_res = 0.0;
     double old_res = 0.0;
     double trial_res = 0.0;
 
@@ -146,7 +146,7 @@ TrustRegionSolver3 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
     FloatArray eig_vec, pert_eig_vec;
     double pert_tol = 0.0e1;
 
-    bool recompute_eig_vec = false;
+//    bool recompute_eig_vec = false;
 
     nite = 0;
     for ( nite = 0; ; ++nite ) {
@@ -162,12 +162,12 @@ TrustRegionSolver3 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
         converged = this->checkConvergence(RT, F, rhs, ddX, X, RRT, internalForcesEBENorm, nite, errorOutOfRangeFlag);
 
 
-        if(nite == 0) {
-        	initial_res = old_res;
-//	    	if ( engngModel->giveProblemScale() == macroScale ) {
-//	    		printf("initial_res: %e\n", initial_res);
-//	    	}
-        }
+//        if(nite == 0) {
+//        	initial_res = old_res;
+////	    	if ( engngModel->giveProblemScale() == macroScale ) {
+////	    		printf("initial_res: %e\n", initial_res);
+////	    	}
+//        }
 
         if ( errorOutOfRangeFlag ) {
             status = NM_NoSuccess;
@@ -765,6 +765,14 @@ TrustRegionSolver3 :: checkConvergence(FloatArray &RT, FloatArray &F, FloatArray
     return answer;
 }
 
+void TrustRegionSolver3::checkPetscError(PetscErrorCode iErrorCode) const {
+
+	if( iErrorCode != 0 ) {
+		printf("In TrustRegionSolver3::checkPetscError: iErrorCode %d\n", int(iErrorCode) );
+	}
+
+}
+
 void TrustRegionSolver3::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec, PetscSparseMtrx &K) {
     PetscErrorCode ierr;
     ST st;
@@ -772,7 +780,7 @@ void TrustRegionSolver3::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
     double eig_rtol = 1.0e-3;
     int max_iter = 10000;
     int nroot = 1;
-    int size = K.giveNumberOfRows();
+//    int size = K.giveNumberOfRows();
 
     if ( !epsInit ) {
         /*
@@ -784,30 +792,39 @@ void TrustRegionSolver3::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
         MPI_Comm comm = PETSC_COMM_SELF;
 #endif
         ierr = EPSCreate(comm, & eps);
+        checkPetscError(ierr);
 //        CHKERRQ(ierr);
         epsInit = true;
     }
 
     ierr = EPSSetOperators( eps, * K.giveMtrx(), NULL );
+    checkPetscError(ierr);
 //    CHKERRQ(ierr);
 
     ierr = EPSSetProblemType(eps, EPS_NHEP);
+    checkPetscError(ierr);
 //    CHKERRQ(ierr);
 
     ierr = EPSGetST(eps, & st);
+    checkPetscError(ierr);
 //    CHKERRQ(ierr);
 
 //    ierr = STSetType(st, STSINVERT);
         ierr = STSetType(st, STSHIFT);
+        checkPetscError(ierr);
 //        ierr = STSetType(st, STCAYLEY);
 //    CHKERRQ(ierr);
     ierr = STSetMatStructure(st, SAME_NONZERO_PATTERN);
+    checkPetscError(ierr);
 //    CHKERRQ(ierr);
     ierr = EPSSetTolerances(eps, ( PetscReal ) eig_rtol, max_iter);
+    checkPetscError(ierr);
 //    CHKERRQ(ierr);
     ierr = EPSSetDimensions(eps, ( PetscInt ) nroot, PETSC_DECIDE, PETSC_DECIDE);
+    checkPetscError(ierr);
 //    CHKERRQ(ierr);
     ierr = EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
+    checkPetscError(ierr);
 //    CHKERRQ(ierr);
 
 
@@ -826,12 +843,15 @@ void TrustRegionSolver3::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
     }
 
     ierr = EPSGetConvergedReason(eps, & eig_reason);
+    checkPetscError(ierr);
 //    CHKERRQ(ierr);
     ierr = EPSGetIterationNumber(eps, & eig_nite);
+    checkPetscError(ierr);
 //    CHKERRQ(ierr);
 //    printf("SLEPcSolver::solve EPSConvergedReason: %d, number of iterations: %d\n", eig_reason, eig_nite);
 
     ierr = EPSGetConverged(eps, & eig_nconv);
+    checkPetscError(ierr);
 //    CHKERRQ(ierr);
 
     double smallest_eig_val = 1.0e20;
@@ -844,8 +864,11 @@ void TrustRegionSolver3::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
         PetscScalar kr;
         Vec Vr;
 
-        ierr = MatGetVecs(* K.giveMtrx(), PETSC_NULL, & Vr);
-//            CHKERRQ(ierr);
+//        ierr = MatGetVecs(* K.giveMtrx(), PETSC_NULL, & Vr);
+////            CHKERRQ(ierr);
+
+        K.createVecGlobal(& Vr);
+
 
             FloatArray Vr_loc;
 
@@ -854,6 +877,7 @@ void TrustRegionSolver3::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
         	// PetscErrorCode EPSGetEigenpair(EPS eps,PetscInt i,PetscScalar *eigr,PetscScalar *eigi,Vec Vr,Vec Vi)
 //            ierr = EPSGetEigenpair(eps, eig_nconv - i - 1, & kr, PETSC_NULL, Vr, PETSC_NULL);
             ierr = EPSGetEigenpair(eps, i, & kr, PETSC_NULL, Vr, PETSC_NULL);
+            checkPetscError(ierr);
 //            CHKERRQ(ierr);
 
             //Store the eigenvalue
@@ -875,6 +899,7 @@ void TrustRegionSolver3::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
 //        }
 
         ierr = VecDestroy(& Vr);
+        checkPetscError(ierr);
 //        printf("Vr_loc: "); Vr_loc.printYourself();
 
 //        printf("\n\n");
