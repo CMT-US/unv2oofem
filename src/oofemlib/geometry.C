@@ -581,6 +581,9 @@ bool Triangle :: pointIsInTriangle(const FloatArray &iP) const
 
     if( p1p2.giveSize() == 2 ) {
         // 2D
+
+    	pProj.resizeWithValues(2);
+
         a1 = {-t1[1], t1[0]};
         a2 = {-t2[1], t2[0]};
         a3 = {-t3[1], t3[0]};
