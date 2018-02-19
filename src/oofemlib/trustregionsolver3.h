@@ -41,15 +41,13 @@ public:
     virtual NM_Status solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
                             FloatArray &X, FloatArray &dX, FloatArray &F,
                             const FloatArray &internalForcesEBENorm, double &l, referenceLoadInputModeType rlm,
-                            int &nite, TimeStep *);
+                            int &nite, TimeStep *) override;
 
     bool checkConvergence(FloatArray &RT, FloatArray &F, FloatArray &rhs, FloatArray &ddX, FloatArray &X,
                           double RRT, const FloatArray &internalForcesEBENorm, int nite, bool &errorOutOfRange, bool printToScreen = true);
 
     void checkPetscError(PetscErrorCode iErrorCode) const;
     void calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec, PetscSparseMtrx &K);
-
-    void addOnDiagonal(const double &iVal, PetscSparseMtrx &K, const IntArray &iLoc);
 
     virtual const char *giveClassName() const { return "TrustRegionSolver3"; }
     virtual const char *giveInputRecordName() const { return _IFT_TrustRegionSolver3_Name; }
@@ -67,10 +65,6 @@ protected:
 
     // How often the eigenvector should be recomputed
     int mEigVecRecalc;
-
-    // Variables for eigenvalue analysis
-    PetscSparseMtrx *A;
-    PetscSparseMtrx *B;
 
     /// Eigenvalue solver context.
     EPS eps;

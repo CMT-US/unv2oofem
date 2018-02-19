@@ -13,6 +13,9 @@
 /// Initial size of trust region. The increment is restricted in L_inf norm.
 #define _IFT_TrustRegionSolver4_InitialSize "initialsize"
 
+/// Tolerance on smallest eigenvalue for adding perturbations
+#define _IFT_TrustRegionSolver4_evtolpert "evtolpert"
+
 #include "nrsolver.h"
 
 #include <slepceps.h>
@@ -31,7 +34,7 @@ public:
     virtual NM_Status solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
                             FloatArray &X, FloatArray &dX, FloatArray &F,
                             const FloatArray &internalForcesEBENorm, double &l, referenceLoadInputModeType rlm,
-                            int &nite, TimeStep *);
+                            int &nite, TimeStep *) override;
 
     void updateTrustRegionSize(const double &iOldRes, const double &iNewtonTrialRes, const double &iEigTrialRes);
 
@@ -46,17 +49,14 @@ public:
     void checkPetscError(PetscErrorCode iErrorCode) const;
     void calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec, PetscSparseMtrx &K);
 
-    void addOnDiagonal(const double &iVal, PetscSparseMtrx &K);
-
 
 protected:
 
     /// Trust region size
     double mTrustRegionSize;
 
-    // Variables for eigenvalue analysis
-    PetscSparseMtrx *A;
-    PetscSparseMtrx *B;
+    /// Perturbation tolerance: perturbations will be added if the smallest eignvalue is below this value.
+    double mPertTol;
 
     /// Eigenvalue solver context.
     EPS eps;

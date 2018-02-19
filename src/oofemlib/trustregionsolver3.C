@@ -173,8 +173,7 @@ TrustRegionSolver3 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
 
     	////////////////////////////////////////////////////////////////////////////
         // Step calculation: Solve trust-region subproblem
-        A = dynamic_cast< PetscSparseMtrx * >(&k);
-        PetscSparseMtrx *Kuu;
+        PetscSparseMtrx &A = dynamic_cast< PetscSparseMtrx& >(k);
         IntArray loc_u;
 
         // Check if k is positive definite
@@ -189,8 +188,8 @@ TrustRegionSolver3 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
 	    		printf("Found PrescribedGradientBCWeak.\n");
 	    	}
 
-	    	auto B = bc->giveKuu(loc_u, tStep);
-	    	Kuu = dynamic_cast< PetscSparseMtrx * >( B.get() );
+	    	auto Kuu = std::dynamic_pointer_cast<PetscSparseMtrx>( bc->giveKuu(loc_u, tStep) );
+
             calcSmallestEigVal(smallest_eig_val, eig_vec, *Kuu);
 
             if ( engngModel->giveProblemScale() == macroScale ) {
@@ -198,20 +197,20 @@ TrustRegionSolver3 :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
             }
         }
         else {
-            calcSmallestEigVal(smallest_eig_val, eig_vec, *A);
+            calcSmallestEigVal(smallest_eig_val, eig_vec, A);
         }
 
         double lambda = 0.0;
         if(smallest_eig_val < 0.0) {
         	lambda = -smallest_eig_val;
-        	addOnDiagonal(lambda, *A, loc_u);
+        	A.addDiagonal(lambda, loc_u);
         }
 
         linSolver->solve(k, rhs, ddX);
 
         // Remove lambda from the diagonal again
         if(smallest_eig_val < 0.0) {
-        	addOnDiagonal(-lambda, *A, loc_u);
+        	A.addDiagonal(-lambda, loc_u);
         }
 
 
@@ -787,35 +786,6 @@ void TrustRegionSolver3::calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec
 
     oEigVal = smallest_eig_val;
 }
-
-void TrustRegionSolver3::addOnDiagonal(const double &iVal, PetscSparseMtrx &K, const IntArray &iLoc) {
-
-	int N = K.giveNumberOfRows();
-
-	Vec petsc_mat_diag;
-	VecCreate(PETSC_COMM_SELF, & petsc_mat_diag);
-	VecSetType(petsc_mat_diag, VECSEQ);
-	VecSetSizes(petsc_mat_diag, PETSC_DECIDE, N);
-
-	MatGetDiagonal(K.mtrx, petsc_mat_diag);
-
-
-	for(int j : iLoc) {
-
-		int i = j - 1;
-
-		double a = 0.0;
-
-		VecGetValues(petsc_mat_diag, 1, &i, &a);
-
-		VecSetValue(petsc_mat_diag, i, iVal, ADD_VALUES);
-	}
-
-	MatDiagonalSet(K.mtrx, petsc_mat_diag, INSERT_VALUES);
-
-	VecDestroy(& petsc_mat_diag);
-}
-
 
 } /* namespace oofem */
 #endif
