@@ -1,0 +1,51 @@
+test.out
+Test of weak periodic BC. Written by Erik Svenning, Chalmers University of Technology, February 2014
+StaticStructural nsteps 1 deltat 1.0 rtolv 1.0e-6 MaxIter 3 minIter 1 lstype 3 smtype 7 nmodules 0 manrmsteps 1
+#vtkxml tstep_all domain_all primvars 1 1 cellvars 1 1
+#gnuplot tstep_all reactionforces boundaryconditions
+domain 2dPlaneStress
+OutputManager tstep_all dofman_all element_all
+ndofman 16 nelem 9 ncrosssect 1 nmat 2 nbc 1 nic 0 nltf 1 nset 1 nxfemman 1
+node 1     coords 2  0        0               
+node 2     coords 2  1        0               
+node 3     coords 2  1        1               
+node 4     coords 2  0        1               
+node 5     coords 2  0.333333  0              
+node 6     coords 2  0.666667  0              
+node 7     coords 2  1        0.333333         
+node 8     coords 2  1        0.666667         
+node 9     coords 2  0.666667  1               
+node 10    coords 2  0.333333  1               
+node 11    coords 2  0        0.666667         
+node 12    coords 2  0        0.333333         
+node 13    coords 2  0.666667  0.333333         
+node 14    coords 2  0.666667  0.666667         
+node 15    coords 2  0.333333  0.333333         
+node 16    coords 2  0.333333  0.666667         
+PlaneStress2DXFEM 13    nodes 4   2   6   13  7   mat 1 crosssect 1 nip 4 nlgeo 0 czmaterial 2 useplanestrain 1
+PlaneStress2DXFEM 14    nodes 4   7   13  14  8   mat 1 crosssect 1 nip 4 nlgeo 0 czmaterial 2 useplanestrain 1
+PlaneStress2DXFEM 15    nodes 4   8   14  9   3   mat 1 crosssect 1 nip 4 nlgeo 0 czmaterial 2 useplanestrain 1
+PlaneStress2DXFEM 16    nodes 4   6   5   15  13  mat 1 crosssect 1 nip 4 nlgeo 0 czmaterial 2 useplanestrain 1
+PlaneStress2DXFEM 17    nodes 4   13  15  16  14  mat 1 crosssect 1 nip 4 nlgeo 0 czmaterial 2 useplanestrain 1
+PlaneStress2DXFEM 18    nodes 4   14  16  10  9   mat 1 crosssect 1 nip 4 nlgeo 0 czmaterial 2 useplanestrain 1
+PlaneStress2DXFEM 19    nodes 4   5   1   12  15  mat 1 crosssect 1 nip 4 nlgeo 0 czmaterial 2 useplanestrain 1
+PlaneStress2DXFEM 20    nodes 4   15  12  11  16  mat 1 crosssect 1 nip 4 nlgeo 0 czmaterial 2 useplanestrain 1
+PlaneStress2DXFEM 21    nodes 4   16  11  4   10  mat 1 crosssect 1 nip 4 nlgeo 0 czmaterial 2 useplanestrain 1
+SimpleCS 1 thick 1.0 material 1
+#
+#Linear elasticity
+IsoLE 1 d 1.0 E 1.0e0 n 0.0 tAlpha 0.0
+IntMatBilinearCZElastic 2 kn 1.0e-2 ks 1.0e-2 knc 1.0e-2 g1c 1.0e6 sigfn 1.0e6 
+#PrescribedGradientBCWeakPeriodic 1 dofs 2 1 2 set 1 loadTimeFunction 1 tracdofscaling 1.0 tractioninterporder 0 numnodesatintersections 0 tractionnodespacing 10000 duplicatecornernodes 0  gradient 2 2 {1.0 0.0 ; 0.0 0.0}
+PrescribedGradientBCWeakPeriodic 1 dofs 2 1 2 set 1 loadTimeFunction 1 tracdofscaling 1.0 tractioninterporder 1 numnodesatintersections 1 tractionnodespacing 2 duplicatecornernodes 1  gradient 2 2 {1.0 0.0 ; 0.0 0.0}
+#PrescribedGradientBCNeumann 1 dofs 2 1 2 set 1 loadTimeFunction 1 gradient 2 2 {1.0 0.0 ; 0.0 0.0}
+#
+ConstantFunction 1 f(t) 1.0
+set 1 elementboundaries 24 19 1 16 1 13 1 13 4 14 4 15 4 15 3 18 3 21 3 21 2 20 2 19 2 
+XfemStructureManager 1 numberofenrichmentitems 0 numberofgppertri 3 debugvtk 0 vtkexport 1 exportfields 1 4
+#crack 1 enrichmentfront 1 propagationlaw 1 inheritbc
+#HeavisideFunction 1
+#PolygonLine 1 points 6 -0.1 0.1 0.5 0.5 1.1 0.9
+#EnrFrontLinearBranchFuncOneEl
+#EnrFrontLinearBranchFuncOneEl
+#PropagationLawDoNothing
