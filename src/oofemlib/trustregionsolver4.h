@@ -31,7 +31,7 @@ public:
 
     virtual IRResultType initializeFrom(InputRecord *ir);
 
-    virtual NM_Status solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
+    NM_Status solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
                             FloatArray &X, FloatArray &dX, FloatArray &F,
                             const FloatArray &internalForcesEBENorm, double &l, referenceLoadInputModeType rlm,
                             int &nite, TimeStep *) override;

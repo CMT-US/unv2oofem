@@ -38,7 +38,7 @@ public:
 
     virtual IRResultType initializeFrom(InputRecord *ir);
 
-    virtual NM_Status solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
+    NM_Status solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
                             FloatArray &X, FloatArray &dX, FloatArray &F,
                             const FloatArray &internalForcesEBENorm, double &l, referenceLoadInputModeType rlm,
                             int &nite, TimeStep *) override;
@@ -51,6 +51,8 @@ public:
 
     virtual const char *giveClassName() const { return "TrustRegionSolver3"; }
     virtual const char *giveInputRecordName() const { return _IFT_TrustRegionSolver3_Name; }
+
+    SparseLinearSystemNM *giveLinearSolver() override;
 
 protected:
 
