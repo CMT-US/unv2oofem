@@ -69,7 +69,12 @@ if (USE_T3D)
 endif ()
 
 if (USE_SLEPC)
-    list (APPEND core_unsorted slepcsolver.C)
+    list (APPEND core_unsorted
+    slepcsolver.C
+    trustregionsolver2.C
+    trustregionsolver3.C
+    trustregionsolver4.C
+    )
 endif ()
 
 if (USE_SUPERLU_MT)
@@ -98,9 +103,6 @@ set (core_nm
     sparselinsystemnm.C
     sparsenonlinsystemnm.C
     nrsolver.C
-    trustregionsolver2.C
-    trustregionsolver3.C
-    trustregionsolver4.C
     dynamicrelaxationsolver.C
     linesearch.C
     calmls.C
