@@ -120,6 +120,7 @@ set (sm_boundary_conditions
     prescribedgradientsubbcs.C
     prescribedfieldsgradientshomogenization.C
     prescribedslipgradientsdd.C
+    transversereinfconstraint.C
     )
 
 set (sm_crosssection
