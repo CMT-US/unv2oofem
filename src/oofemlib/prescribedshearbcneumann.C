@@ -225,10 +225,10 @@ void PrescribedShearBCNeumann :: integrateTangent(FloatMatrix &oTangent, Element
 
     // Fetch integration rule
     XfemElementInterface *xfemElInt = dynamic_cast< XfemElementInterface * >( e );
-    if ( xfemElInt != NULL && domain->hasXfemManager() ) {
+    if ( xfemElInt && domain->hasXfemManager() ) {
         IntArray edgeNodes;
         FEInterpolation2d *interp2d = dynamic_cast< FEInterpolation2d * >( interp );
-        if ( interp2d == NULL ) {
+        if ( !interp2d ) {
             OOFEM_ERROR("failed to cast to FEInterpolation2d.")
         }
         interp2d->computeLocalEdgeMapping(edgeNodes, iBndIndex);

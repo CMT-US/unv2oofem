@@ -76,9 +76,9 @@ public:
     /// Destructor
     virtual ~PrescribedSlipGradientsDD() { }
 
-    virtual double give(Dof *dof, ValueModeType mode, double time);
+    double give(Dof *dof, ValueModeType mode, double time) override;
 
-    virtual bcType giveType() const { return DirichletBT; }
+    bcType giveType() const override { return DirichletBT; }
 
     /**
      * Initializes receiver according to object description stored in input record.
@@ -88,8 +88,8 @@ public:
      * The prescribed tensor's columns must be equal to the size of the center coordinates.
      * The size of the center coordinates must be equal to the size of the coordinates in the applied nodes.
      */
-    virtual IRResultType initializeFrom(InputRecord *ir);
-    virtual void giveInputRecord(DynamicInputRecord &input);
+    IRResultType initializeFrom(InputRecord *ir) override;
+    void giveInputRecord(DynamicInputRecord &input) override;
 
     /**
      * Constructs a coefficient matrix for all prescribed unknowns.
@@ -104,14 +104,14 @@ public:
      * @param sigma Output quantity (typically stress).
      * @param tStep Active time step.
      */
-    virtual void computeStress(FloatArray &stress, TimeStep *tStep);
+    void computeStress(FloatArray &stress, TimeStep *tStep) override;
 
     /**
      * Computes the homogenized, macroscopic effective bond stress
      * @param bStress Output quantity (bond stress * circumference / RVE area)
      * @param tStep Active time step.
      */
-    virtual void computeTransferStress(FloatArray &bStress, TimeStep *tStep);
+    void computeTransferStress(FloatArray &bStress, TimeStep *tStep) override;
 
     /**
      * Computes the homogenized, macroscopic effective reinforcement stress
@@ -119,19 +119,19 @@ public:
      * @param rStress Output quantityt (membrane stress acting on reinforcement grid)
      * @param tStep Active time step.
      */
-    virtual void computeReinfStress(FloatArray &rStress, TimeStep *tStep);
+    void computeReinfStress(FloatArray &rStress, TimeStep *tStep) override;
 
     /**
      * Computes the macroscopic tangent for homogenization problems through sensitivity analysis.
      * @param tangent Output tangent.
      * @param tStep Active time step.
      */
-    virtual void computeTangent(FloatMatrix &tangent, TimeStep *tStep);
+    void computeTangent(FloatMatrix &tangent, TimeStep *tStep) override;
 
-    virtual void scale(double s) { mGradient1.times(s); }
+    void scale(double s) override { mGradient1.times(s); }
 
-    virtual const char *giveClassName() const { return "PrescribedSlipGradientsDD"; }
-    virtual const char *giveInputRecordName() const { return _IFT_PrescribedSlipGradientsDD_Name; }
+    const char *giveClassName() const override { return "PrescribedSlipGradientsDD"; }
+    const char *giveInputRecordName() const override { return _IFT_PrescribedSlipGradientsDD_Name; }
 
 protected:
     /**

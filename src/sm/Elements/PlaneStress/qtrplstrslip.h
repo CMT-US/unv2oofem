@@ -61,30 +61,30 @@ public:
     QTrPlaneStress2dSlip(int n, Domain * d);
     virtual ~QTrPlaneStress2dSlip() { }
 
-    virtual Interface *giveInterface(InterfaceType it);
-    virtual FEInterpolation *giveInterpolation() const;
-    virtual double giveParentElSize() const { return 0.5; }
+    Interface *giveInterface(InterfaceType it) override;
+    FEInterpolation *giveInterpolation() const override;
+    double giveParentElSize() const override { return 0.5; }
 
-    virtual void computeStiffnessMatrix(FloatMatrix &answer, MatResponseMode rMode, TimeStep *tStep);
-    virtual void giveInternalForcesVector(FloatArray &answer, TimeStep *tStep, int useUpdatedGpRecord = 0);
+    void computeStiffnessMatrix(FloatMatrix &answer, MatResponseMode rMode, TimeStep *tStep) override;
+    void giveInternalForcesVector(FloatArray &answer, TimeStep *tStep, int useUpdatedGpRecord = 0) override;
 
-    virtual void computeHomogenizedFields(FloatArray &Stress, FloatArray &bStress, FloatArray &rStress, const FloatArray &strain, const FloatArray &slip, const FloatArray &slipGradient, GaussPoint *gp, TimeStep *tStep);
+    void computeHomogenizedFields(FloatArray &Stress, FloatArray &bStress, FloatArray &rStress, const FloatArray &strain, const FloatArray &slip, const FloatArray &slipGradient, GaussPoint *gp, TimeStep *tStep);
 
     // definition & identification
-    virtual const char *giveInputRecordName() const { return _IFT_QTrPlaneStress2dSlip_Name; }
-    virtual const char *giveClassName() const { return "QTrPlaneStress2dSlip"; }
-    virtual IRResultType initializeFrom(InputRecord *ir);
-    virtual void giveDofManDofIDMask(int inode, IntArray &answer) const;
+    const char *giveInputRecordName() const override { return _IFT_QTrPlaneStress2dSlip_Name; }
+    const char *giveClassName() const override { return "QTrPlaneStress2dSlip"; }
+    IRResultType initializeFrom(InputRecord *ir) override;
+    void giveDofManDofIDMask(int inode, IntArray &answer) const override;
 
-    virtual void SPRNodalRecoveryMI_giveSPRAssemblyPoints(IntArray &pap);
-    virtual void SPRNodalRecoveryMI_giveDofMansDeterminedByPatch(IntArray &answer, int pap);
-    virtual int SPRNodalRecoveryMI_giveNumberOfIP();
-    virtual SPRPatchType SPRNodalRecoveryMI_givePatchType();
+    void SPRNodalRecoveryMI_giveSPRAssemblyPoints(IntArray &pap) override;
+    void SPRNodalRecoveryMI_giveDofMansDeterminedByPatch(IntArray &answer, int pap) override;
+    int SPRNodalRecoveryMI_giveNumberOfIP() override;
+    SPRPatchType SPRNodalRecoveryMI_givePatchType() override;
 
-    virtual int giveIPValue(FloatArray &answer, GaussPoint *gp, InternalStateType type, TimeStep *tStep);
+    int giveIPValue(FloatArray &answer, GaussPoint *gp, InternalStateType type, TimeStep *tStep) override;
 
 protected:
-    virtual int giveNumberOfIPForMassMtrxIntegration() { return 4; }
+    int giveNumberOfIPForMassMtrxIntegration() override { return 4; }
 
 };
 } // end namespace oofem

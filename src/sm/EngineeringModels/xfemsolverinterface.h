@@ -58,13 +58,11 @@ public:
     virtual ~XfemSolverInterface() { }
 
     void propagateXfemInterfaces(TimeStep *tStep, StructuralEngngModel &ioEngngModel, bool iRecomputeStepAfterCrackProp);
-
     virtual IRResultType initializeFrom(InputRecord *ir);
 
 
 protected:
     bool mNeedsVariableMapping;
-
     bool mForceRemap;
 };
 

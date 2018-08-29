@@ -160,8 +160,8 @@ public:
     void saveContext(DataStream &stream, ContextMode mode) override;
     void restoreContext(DataStream &stream, ContextMode mode) override;
     /// Functions for MaterialStatusMapperInterface
-    virtual void copyStateVariables(const MaterialStatus &iStatus);
-    virtual void addStateVariables(const MaterialStatus &iStatus);
+    void copyStateVariables(const MaterialStatus &iStatus) override;
+    void addStateVariables(const MaterialStatus &iStatus) override;
 };
 
 /**

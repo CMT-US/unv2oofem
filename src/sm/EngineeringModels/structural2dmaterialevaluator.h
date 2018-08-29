@@ -81,16 +81,16 @@ public:
     Structural2dMaterialEvaluator(int i, EngngModel * _master = NULL);
     virtual ~Structural2dMaterialEvaluator();
 
-    virtual IRResultType initializeFrom(InputRecord *ir);
+    IRResultType initializeFrom(InputRecord *ir) override;
 
-    virtual void solveYourself();
+    void solveYourself() override;
 
-    virtual int checkConsistency();
-    virtual void doStepOutput(TimeStep *tStep);
-    virtual TimeStep *giveNextStep();
+    int checkConsistency() override;
+    void doStepOutput(TimeStep *tStep) override;
+    TimeStep *giveNextStep() override;
 
-    virtual const char *giveClassName() const { return "Structural2dMaterialEvaluator"; }
-    virtual const char *giveInputRecordName() const { return _IFT_Structural2dMaterialEvaluator_Name; }
+    const char *giveClassName() const override { return "Structural2dMaterialEvaluator"; }
+    const char *giveInputRecordName() const { return _IFT_Structural2dMaterialEvaluator_Name; }
 };
 } // end namespace oofem
 

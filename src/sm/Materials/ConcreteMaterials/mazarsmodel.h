@@ -150,7 +150,7 @@ protected:
     double computeGt(double kappa, GaussPoint *gp);
     double computeGc(double kappa, GaussPoint *gp);
 
-    double damageFunctionPrime(double kappa, GaussPoint *gp);
+    double damageFunctionPrime(double kappa, GaussPoint *gp) override;
 };
 } // end namespace oofem
 #endif // mazarsmodel_h

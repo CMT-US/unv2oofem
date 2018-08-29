@@ -325,8 +325,7 @@ std::vector<std::unique_ptr<EnrichmentItem>> NCStrictEllipticity::nucleateEnrich
 
 										// Enrichment fronts
 										crack->setEnrichmentFrontStart(std::make_unique<EnrFrontCohesiveBranchFuncOneEl>());
-
-                                        crack->setEnrichmentFrontEnd(std::make_unique<EnrFrontCohesiveBranchFuncOneEl>());
+                                        					crack->setEnrichmentFrontEnd(std::make_unique<EnrFrontCohesiveBranchFuncOneEl>());
 
 
 

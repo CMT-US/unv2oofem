@@ -49,8 +49,8 @@ public:
     void checkPetscError(PetscErrorCode iErrorCode) const;
     void calcSmallestEigVal(double &oEigVal, FloatArray &oEigVec, PetscSparseMtrx &K);
 
-    virtual const char *giveClassName() const { return "TrustRegionSolver3"; }
-    virtual const char *giveInputRecordName() const { return _IFT_TrustRegionSolver3_Name; }
+    const char *giveClassName() const override { return "TrustRegionSolver3"; }
+    const char *giveInputRecordName() const override { return _IFT_TrustRegionSolver3_Name; }
 
     SparseLinearSystemNM *giveLinearSolver() override;
 

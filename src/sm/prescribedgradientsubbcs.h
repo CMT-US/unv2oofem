@@ -57,16 +57,16 @@ public:
     PrescribedGradientSubBCs(int n, Domain *d);
     virtual ~PrescribedGradientSubBCs();
 
-    virtual IRResultType initializeFrom(InputRecord *ir);
-    virtual void giveInputRecord(DynamicInputRecord &input);
+    IRResultType initializeFrom(InputRecord *ir) override;
+    void giveInputRecord(DynamicInputRecord &input) override;
 
 
-    virtual bcType giveType() const { return UnknownBT; }
+    bcType giveType() const override { return UnknownBT; }
 
-    virtual void scale(double s);
+    void scale(double s) override;
 
-    virtual const char *giveClassName() const { return "PrescribedGradientSubBCs"; }
-    virtual const char *giveInputRecordName() const { return _IFT_PrescribedGradientSubBCs_Name; }
+    const char *giveClassName() const override { return "PrescribedGradientSubBCs"; }
+    const char *giveInputRecordName() const override { return _IFT_PrescribedGradientSubBCs_Name; }
 
     void computeField(FloatArray &sigma, TimeStep *tStep);
     void computeTangent(FloatMatrix &tangent, TimeStep *tStep);
