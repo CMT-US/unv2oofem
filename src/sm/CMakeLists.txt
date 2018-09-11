@@ -25,6 +25,7 @@ set (sm_element
     Elements/Bars/qtruss1d.C 
     Elements/Bars/qtruss1dgrad.C
     Elements/Beams/libeam2d.C 
+    Elements/Beams/libeam2dxy.C
     Elements/Beams/libeam2dnl.C
     Elements/Beams/libeam3d.C 
     Elements/Beams/libeam3dnl.C 
@@ -74,6 +75,7 @@ set (sm_element
     Elements/PlaneStress/basicelement.C
     Elements/PlaneStress/trplanestressrotallman3d.C
     Elements/PlaneStress/linquad3d_planestress.C
+    Elements/PlaneStress/qtrplstrslip.C
     Elements/AbaqusUserElement.C
     Elements/htselement.C
     Elements/latticestructuralelement.C
@@ -112,6 +114,12 @@ set (sm_interface_elements
 
 set (sm_boundary_conditions
     Deprecated/prescribedgenstrainshell7.C
+    prescribedgradientdd.C
+    prescribedgradientdn.C
+    prescribedgradientnn.C
+    prescribedgradientsubbcs.C
+    prescribedfieldsgradientshomogenization.C
+    prescribedslipgradientsdd.C
     )
 
 set (sm_crosssection
@@ -140,6 +148,7 @@ set (sm_emodel
     EngineeringModels/incrementallinearstatic.C
     EngineeringModels/freewarping.C 
     EngineeringModels/structuralmaterialevaluator.C
+    EngineeringModels/structural2dmaterialevaluator.C
     EngineeringModels/qclinearstatic.C
     )
 
@@ -169,6 +178,7 @@ set (sm_material
     Materials/BoneMaterials/trabbonegrad3d.C
     Materials/ConcreteMaterials/concrete2.C 
     Materials/ConcreteMaterials/concrete3.C 
+    Materials/concrete3viscreg.C 
     Materials/ConcreteMaterials/concretedpm.C 
     Materials/ConcreteMaterials/concretedpm2.C
     Materials/ConcreteMaterials/idm1.C 
@@ -193,6 +203,7 @@ set (sm_material
     Materials/RheoChainMaterials/mpsdammat.C
     Materials/RheoChainMaterials/eurocode2creep.C
     Materials/structuralfe2material.C
+    Materials/structuralfe2materialplanestress.C
     Materials/rcsd.C 
     Materials/rcsde.C 
     Materials/rcsdnl.C
@@ -288,12 +299,14 @@ set (sm_xfem
     xfem/enrichmentitems/shellcrack.C
     xfem/propagationlaws/plhoopstresscirc.C
     xfem/propagationlaws/plprincipalstrain.C
+    xfem/propagationlaws/plstrictellipticity.C
     xfem/propagationlaws/plmaterialforce.C
     xfem/propagationlaws/plczdamageradius.C
     xfem/xfemstructuremanager.C
     xfem/matforceevaluator.C
     xfem/nucleationcriteria/ncprincipalstress.C
     xfem/nucleationcriteria/ncprincipalstrain.C
+    xfem/nucleationcriteria/ncstrictellipticity.C
     EngineeringModels/xfemsolverinterface.C
     )
 

@@ -1028,7 +1028,6 @@ void XfemStructuralElementInterface :: computeGlobalCohesiveTractionVector(Float
 
     FloatArray jump3D = {iJump.at(1), iJump.at(2), 0.0};
 
-
     FloatArray crackNormal3D = {iCrackNormal.at(1), iCrackNormal.at(2), 0.0};
 
     FloatArray ez = {0.0, 0.0, 1.0};
@@ -1963,6 +1962,51 @@ void XfemStructuralElementInterface :: computeIPAverageInTriangle(FloatArray &an
         answer.times(1. / gptot);
     }
 
+}
+
+int XfemStructuralElementInterface :: map_CZ_StateVariables(Domain &iOldDom, const TimeStep &iTStep)
+{
+    int result = 1;
+
+
+//    printf("mCZMaterialNum: %d\n", mCZMaterialNum );
+
+    if( mCZMaterialNum > 0 ) {
+        Set sourceElemSet = Set(0, & iOldDom);
+
+    	printf("Mapping CZ variables.\n");
+
+		int materialNum = mCZMaterialNum;
+		IntArray elWithMaterialNum = iOldDom.giveElementsWithMaterialNum(materialNum);
+		printf("elWithMaterialNum: "); elWithMaterialNum.printYourself();
+		sourceElemSet.setElementList( elWithMaterialNum );
+
+		for ( auto &iRule: mpCZIntegrationRules ) {
+			for ( GaussPoint *gp: *iRule ) {
+
+				MaterialStatus *ms = dynamic_cast< MaterialStatus * >( gp->giveMaterialStatus() );
+				if(!ms) {
+					StructuralElement *s_el = dynamic_cast<StructuralElement*>(element);
+					StructuralCrossSection *cs = s_el->giveStructuralCrossSection();
+					cs->createMaterialStatus(*gp);
+					ms = dynamic_cast<MaterialStatus*>( gp->giveMaterialStatus() );
+				}
+
+	//            if ( ms == NULL ) {
+	//                OOFEM_ERROR("failed to fetch MaterialStatus.");
+	//            }
+
+				MaterialStatusMapperInterface *interface = dynamic_cast< MaterialStatusMapperInterface * >(ms);
+				if ( interface == NULL ) {
+					OOFEM_ERROR("Failed to fetch MaterialStatusMapperInterface.");
+				}
+
+				result &= interface->MSMI_map_cz( *gp, iOldDom, sourceElemSet, iTStep, * ( ms ) );
+			}
+		}
+    }
+
+    return result;
 }
 
 } /* namespace oofem */

@@ -55,7 +55,7 @@ namespace oofem {
  */
 class Concrete3 : public RCM2Material
 {
-    enum Concrete3_softeningMode { linearSoftening, exponentialSoftening };
+    enum Concrete3_softeningMode { linearSoftening, exponentialSoftening, hordijkSoftening };
 
 private:
     //double shearRetFactor; // shearRetentionFactor

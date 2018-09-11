@@ -159,6 +159,9 @@ public:
 
     contextIOResultType saveContext(DataStream &stream, ContextMode mode, void *obj = NULL) override;
     contextIOResultType restoreContext(DataStream &stream, ContextMode mode, void *obj = NULL) override;
+    /// Functions for MaterialStatusMapperInterface
+    virtual void copyStateVariables(const MaterialStatus &iStatus);
+    virtual void addStateVariables(const MaterialStatus &iStatus);
 };
 
 /**
@@ -250,6 +253,7 @@ protected:
      * void  computeTrialStressIncrement (FloatArray& answer, GaussPoint *gp,
      * const FloatArray& strainIncrement, TimeStep* tStep);
      */
+    FloatMatrix *GiveCrackTransformationMtrx(GaussPoint *gp, int i);
     virtual void giveEffectiveMaterialStiffnessMatrix(FloatMatrix &answer,
                                                       MatResponseMode rMode,
                                                       GaussPoint *gp, TimeStep *tStep);

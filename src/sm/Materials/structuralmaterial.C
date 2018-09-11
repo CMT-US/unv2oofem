@@ -157,7 +157,7 @@ StructuralMaterial :: giveRealStressVector_StressControl(FloatArray &answer, Gau
     }
 
     // Iterate to find full vE.
-    for ( int k = 0; k < 10; k++ ) { // Allow for a generous 100 iterations.
+    for ( int k = 0; k < 100; k++ ) { // Allow for a generous 100 iterations.
         this->giveRealStressVector_3d(vS, gp, vE, tStep);
         // For debugging the iterations:
         //vE.printYourself("vE");

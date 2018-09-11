@@ -18,6 +18,7 @@ debug/
 t3d.bmf*
 perf.data*
 *.orig
+*.out-gp*
 
 # documentation aux-files.
 *.aux

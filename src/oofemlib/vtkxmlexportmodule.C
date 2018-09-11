@@ -913,7 +913,7 @@ VTKXMLExportModule :: giveDataHeaders(std :: string &pointHeader, std :: string 
 
     for ( int i = 1; i <= primaryVarsToExport.giveSize(); i++ ) {
         UnknownType type = ( UnknownType ) primaryVarsToExport.at(i);
-        if ( type == DisplacementVector || type == EigenVector || type == VelocityVector || type == DirectorField ) {
+        if ( type == DisplacementVector || type == EigenVector || type == VelocityVector || type == DirectorField || type == ShearSlipVector ) {
             vectors += __UnknownTypeToString(type);
             vectors.append(" ");
         } else if ( type == FluxVector || type == PressureVector || type == Temperature || type == Humidity || type == DeplanationFunction ) {
@@ -1528,6 +1528,22 @@ VTKXMLExportModule :: getNodalVariableFromPrimaryField(FloatArray &answer, DofMa
         }
 
         iState = IST_DirectorField;
+    } else if ( type == ShearSlipVector ) {
+        dofIDMask = {
+            ( int ) Undef, ( int ) Undef, ( int ) Undef
+        };
+        for ( Dof *dof : *dman ) {
+            DofIDItem id = dof->giveDofID();
+            if ( id == S_u ) {
+                dofIDMask.at(1) = id;
+            } else if ( id == S_v ) {
+                dofIDMask.at(2) = id;
+            } else if ( id == S_z ) {
+                dofIDMask.at(3) = id;
+            }
+        }
+        answer.resize(3);
+        iState = IST_ShearSlip;
     } else {
         OOFEM_ERROR( "unsupported unknownType %s", __UnknownTypeToString(type) );
     }

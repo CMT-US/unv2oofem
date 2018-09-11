@@ -76,6 +76,10 @@ namespace oofem {
 	ENUM_ITEM_WITH_VALUE(Trac_u, 28) /* Independent traction field in x-direction*/ \
 	ENUM_ITEM_WITH_VALUE(Trac_v, 29) /* Independent traction field in y-direction*/ \
 	ENUM_ITEM_WITH_VALUE(Trac_w, 30) /* Independent traction field in z-direction*/ \
+  \
+    ENUM_ITEM_WITH_VALUE(S_u, 31) /* Slip field in x-direction */ \
+    ENUM_ITEM_WITH_VALUE(S_v, 32) /* Slip field in y-direction */ \
+    ENUM_ITEM_WITH_VALUE(S_z, 33) /* SLip field in z-direction */ \
 
 /**
  * Type representing particular dof type. Values of this type describe the physical meaning of

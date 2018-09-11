@@ -50,12 +50,15 @@
 #include "floatarray.h"
 #include "exportmodulemanager.h"
 #include "vtkxmlexportmodule.h"
+#include "dynamicinputrecord.h"
 
 namespace oofem {
 
-XfemSolverInterface::XfemSolverInterface() :
-    mNeedsVariableMapping(false)
+XfemSolverInterface::XfemSolverInterface():
+    mNeedsVariableMapping(false),
+    mForceRemap(false)
 { }
+
 
 void XfemSolverInterface::propagateXfemInterfaces(TimeStep *tStep, StructuralEngngModel &ioEngngModel, bool iRecomputeStepAfterCrackProp)
 {
@@ -64,7 +67,20 @@ void XfemSolverInterface::propagateXfemInterfaces(TimeStep *tStep, StructuralEng
 
     if ( domain->hasXfemManager() ) {
         XfemManager *xMan = domain->giveXfemManager();
-        bool frontsHavePropagated = false;
+
+        int numEI = xMan->giveNumberOfEnrichmentItems();
+        for(int i = 1; i <= numEI; i++) {
+        	EnrichmentItem *ei = xMan->giveEnrichmentItem(i);
+        	ei->writeVtkDebug();
+        }
+
+    }
+
+
+    bool frontsHavePropagated = false;
+
+    if(domain->hasXfemManager()) {
+        XfemManager *xMan = domain->giveXfemManager();
         if ( xMan->hasInitiationCriteria() ) {
             // TODO: generalise this?
             // Intitiate delaminations (only implemented for listbasedEI/delamination. Treated the same way as propagation)
@@ -76,10 +92,58 @@ void XfemSolverInterface::propagateXfemInterfaces(TimeStep *tStep, StructuralEng
             xMan->propagateFronts(frontsHavePropagated);
         }
 
+        if(frontsHavePropagated || mForceRemap) {
+
+			int numEl = domain->giveNumberOfElements();
+			for ( int i = 1; i <= numEl; i++ ) {
+//				printf("XfemSolverInterface::propagateXfemInterfaces: Calling XfemElementInterface_updateIntegrationRule.\n");
+
+				////////////////////////////////////////////////////////
+				// Map state variables for enriched elements
+				XfemElementInterface *xfemElInt = dynamic_cast< XfemElementInterface * >( domain->giveElement(i) );
+
+				if(xfemElInt) {
+					xfemElInt->XfemElementInterface_updateIntegrationRule();
+				}
+
+			}
+
+
+            mNeedsVariableMapping = false;
+
+            if( frontsHavePropagated ) {
+				ioEngngModel.giveDomain(1)->postInitialize();
+				ioEngngModel.forceEquationNumbering();
+            }
+
+            if(iRecomputeStepAfterCrackProp) {
+                printf("Recomputing time step.\n");
+                ioEngngModel.forceEquationNumbering();
+                ioEngngModel.solveYourselfAt(tStep);
+                ioEngngModel.updateYourself( tStep );
+                ioEngngModel.terminate( tStep );
+
+            }
+        }
+    }
+
+
+
+
+
+
+    if(domain->hasXfemManager()) {
+        XfemManager *xMan = domain->giveXfemManager();
+
         bool eiWereNucleated = false;
         if ( xMan->hasNucleationCriteria() ) {
-        	xMan->nucleateEnrichmentItems(eiWereNucleated);
-        }
+
+        	if(!frontsHavePropagated) {
+        		xMan->nucleateEnrichmentItems(eiWereNucleated);
+        	}
+       }
+
+       if( eiWereNucleated || mForceRemap) {
 
         for ( auto &elem : domain->giveElements() ) {
             ////////////////////////////////////////////////////////
@@ -91,8 +155,12 @@ void XfemSolverInterface::propagateXfemInterfaces(TimeStep *tStep, StructuralEng
             }
         }
 
-        if ( frontsHavePropagated || eiWereNucleated ) {
-            mNeedsVariableMapping = false;
+        mNeedsVariableMapping = false;
+
+        if( eiWereNucleated ) {
+		ioEngngModel.giveDomain(1)->postInitialize();
+		ioEngngModel.forceEquationNumbering();
+        }
 
             ioEngngModel.giveDomain(1)->postInitialize();
             ioEngngModel.forceEquationNumbering();
@@ -106,6 +174,25 @@ void XfemSolverInterface::propagateXfemInterfaces(TimeStep *tStep, StructuralEng
             }
         }
     }
+}
+
+IRResultType
+XfemSolverInterface :: initializeFrom(InputRecord *ir)
+{
+
+//	printf("Entering XfemSolverInterface :: initializeFrom(InputRecord *ir).\n");
+
+	mForceRemap = ir->hasField(_IFT_XfemSolverInterface_ForceRemap);
+
+//	if(mForceRemap) {
+//		printf("mForceRemap is true.\n");
+//	}
+//	else {
+//		printf("mForceRemap is false.\n");
+//	}
+
+
+    return IRRT_OK;
 }
 
 

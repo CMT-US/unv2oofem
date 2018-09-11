@@ -149,6 +149,8 @@ protected:
     void giveNormalBlockOfElasticCompliance(FloatMatrix &answer, GaussPoint *gp);
     double computeGt(double kappa, GaussPoint *gp);
     double computeGc(double kappa, GaussPoint *gp);
+
+    double damageFunctionPrime(double kappa, GaussPoint *gp);
 };
 } // end namespace oofem
 #endif // mazarsmodel_h

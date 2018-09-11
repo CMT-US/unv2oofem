@@ -45,6 +45,7 @@
 #define _IFT_StructuralFE2Material_Name "structfe2material"
 #define _IFT_StructuralFE2Material_fileName "filename"
 #define _IFT_StructuralFE2Material_useNumericalTangent "use_num_tangent"
+#define _IFT_StructuralFE2Material_RegCoeff "regcoeff"
 //@}
 
 namespace oofem {
@@ -84,6 +85,7 @@ public:
     void setTimeStep(TimeStep *tStep);
 
     FloatMatrix &giveTangent() { return tangent; }
+    void setTangent(const FloatMatrix &iTangent) {tangent = iTangent; oldTangent = false;}
 
     const char *giveClassName() const override { return "StructuralFE2MaterialStatus"; }
 
@@ -124,6 +126,8 @@ protected:
     std :: string inputfile;
     static int n;
     bool useNumTangent;
+    
+    double mRegCoeff;
 
 public:
     StructuralFE2Material(int n, Domain * d);

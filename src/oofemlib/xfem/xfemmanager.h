@@ -180,6 +180,7 @@ public:
     double giveEnrDofScaleFactor() const {return mEnrDofScaleFac;}
 
     bool isElementEnriched(const Element *elem);
+    bool isAllElementNodesEnriched(const Element *elem);
 
     inline EnrichmentItem *giveEnrichmentItem(int n) { return enrichmentItemList [ n - 1 ].get(); }
     int giveNumberOfEnrichmentItems() const { return ( int ) enrichmentItemList.size(); }

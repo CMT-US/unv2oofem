@@ -26,6 +26,7 @@
 #include "mathfem.h"
 #include "classfactory.h"
 #include "dynamicinputrecord.h"
+#include "matstatmapperint.h"
 
 #ifdef __OOFEG
  #include "oofeggraphiccontext.h"
@@ -33,7 +34,8 @@
  #include "xfem/patchintegrationrule.h"
 #endif
 
-
+#include "problemmode.h"
+#include "engngm.h"
 
 #include <string>
 #include <sstream>
@@ -561,5 +563,47 @@ TrPlaneStress2dXFEM :: giveCompositeExportData(std::vector< VTKPiece > &vtkPiece
     }
 
 }
+
+int
+TrPlaneStress2dXFEM :: mapStateVariables(Domain &iOldDom, const TimeStep &iTStep)
+{
+//	printf("Entering TrPlaneStress2dXFEM :: mapStateVariables.\n");
+
+    int result = 1;
+
+
+    Set sourceElemSet = Set(0, & iOldDom);
+    int materialNum = this->giveMaterial()->giveNumber();
+    sourceElemSet.setElementList( iOldDom.giveElementsWithMaterialNum(materialNum) );
+
+    for ( auto &iRule: integrationRulesArray ) {
+        for ( GaussPoint *gp: *iRule ) {
+
+            MaterialStatus *ms = dynamic_cast< MaterialStatus * >( gp->giveMaterialStatus() );
+			if(!ms) {
+//				StructuralElement *s_el = dynamic_cast<StructuralElement*>(element);
+				StructuralCrossSection *cs = this->giveStructuralCrossSection();
+				cs->createMaterialStatus(*gp);
+				ms = dynamic_cast<MaterialStatus*>( gp->giveMaterialStatus() );
+			}
+
+//            if ( ms == nullptr ) {
+//                OOFEM_ERROR("failed to fetch MaterialStatus.");
+//            }
+
+            MaterialStatusMapperInterface *interface = dynamic_cast< MaterialStatusMapperInterface * >(ms);
+            if ( interface == nullptr ) {
+                OOFEM_LOG_ERROR("Failed to fetch MaterialStatusMapperInterface.");
+            }
+
+            result &= interface->MSMI_map( *gp, iOldDom, sourceElemSet, iTStep, * ( ms ) );
+        }
+    }
+
+    XfemStructuralElementInterface :: map_CZ_StateVariables(iOldDom, iTStep);
+
+    return result;
+}
+
 
 } /* namespace oofem */

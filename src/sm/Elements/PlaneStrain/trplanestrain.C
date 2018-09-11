@@ -43,6 +43,8 @@
 #include "intarray.h"
 #include "mathfem.h"
 #include "classfactory.h"
+#include "matstatmapperint.h"
+#include "../sm/CrossSections/structuralcrosssection.h"
 
 #ifdef __OOFEG
  #include "oofeggraphiccontext.h"
@@ -107,6 +109,44 @@ TrPlaneStrain :: initializeFrom(InputRecord *ir)
     return IRRT_OK;
 }
 
+int
+TrPlaneStrain :: mapStateVariables(Domain &iOldDom, const TimeStep &iTStep)
+{
+//	printf("Entering TrPlaneStress2dXFEM :: mapStateVariables.\n");
+
+    int result = 1;
+
+
+    Set sourceElemSet = Set(0, & iOldDom);
+    int materialNum = this->giveMaterial()->giveNumber();
+    sourceElemSet.setElementList( iOldDom.giveElementsWithMaterialNum(materialNum) );
+
+    for ( auto &iRule: integrationRulesArray ) {
+        for ( GaussPoint *gp: *iRule ) {
+
+            MaterialStatus *ms = dynamic_cast< MaterialStatus * >( gp->giveMaterialStatus() );
+			if(!ms) {
+//				StructuralElement *s_el = dynamic_cast<StructuralElement*>(element);
+				StructuralCrossSection *cs = this->giveStructuralCrossSection();
+				cs->createMaterialStatus(*gp);
+				ms = dynamic_cast<MaterialStatus*>( gp->giveMaterialStatus() );
+			}
+
+//            if ( ms == NULL ) {
+//                OOFEM_ERROR("failed to fetch MaterialStatus.");
+//            }
+
+            MaterialStatusMapperInterface *interface = dynamic_cast< MaterialStatusMapperInterface * >(ms);
+            if ( interface == NULL ) {
+                OOFEM_ERROR("Failed to fetch MaterialStatusMapperInterface.");
+            }
+
+            result &= interface->MSMI_map( *gp, iOldDom, sourceElemSet, iTStep, * ( ms ) );
+        }
+    }
+
+    return result;
+}
 
 
 void

@@ -35,6 +35,11 @@
 #ifndef XFEMSTRUCTURALELEMENTINTERFACE_H_
 #define XFEMSTRUCTURALELEMENTINTERFACE_H_
 
+/// Options for non-standard cohesive zone formulation
+#define _IFT_XfemStructuralElementInterface_IncludeBulkJump "include_bulk_jump"
+#define _IFT_XfemStructuralElementInterface_IncludeBulkCorr "include_bulk_corr"
+
+
 #include "xfem/xfemelementinterface.h"
 #include "internalstatetype.h"
 namespace oofem {
@@ -106,6 +111,9 @@ public:
 
     /// Help functions for VTK export.
     void computeIPAverageInTriangle(FloatArray &answer, IntegrationRule *iRule, Element *elem, InternalStateType isType, TimeStep *tStep, const Triangle &iTri);
+
+
+    virtual int map_CZ_StateVariables(Domain &iOldDom, const TimeStep &iTStep);
 
 };
 } /* namespace oofem */

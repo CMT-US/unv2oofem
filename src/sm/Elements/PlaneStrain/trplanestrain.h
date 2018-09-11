@@ -99,6 +99,8 @@ public:
     const char *giveClassName() const override { return "TrPlaneStrain"; }
     IRResultType initializeFrom(InputRecord *ir) override;
 
+    virtual int mapStateVariables(Domain &iOldDom, const TimeStep &iTStep);
+
 protected:
     int giveNumberOfIPForMassMtrxIntegration() override { return 1; }
 };

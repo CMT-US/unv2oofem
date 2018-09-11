@@ -554,6 +554,8 @@ void PrescribedGradientBCWeak :: assembleGPContrib(SparseMtrx &answer, TimeStep 
     contribT.beTranspositionOf(contrib);
     answer.assemble(disp_cols, trac_rows, contribT);
 
+
+
     ///////////////
     // Gamma_minus
     contrib.clear();

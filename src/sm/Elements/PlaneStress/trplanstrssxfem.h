@@ -63,6 +63,8 @@ public:
 
     virtual ~TrPlaneStress2dXFEM();
 
+    int giveSpatialDimension() override {return 2;}
+
     int checkConsistency() override;
 
     int testElementExtension(ElementExtension ext) override { return ( ( ext == Element_EdgeLoadSupport ) ? 1 : 0 ); }
@@ -107,6 +109,8 @@ public:
 
     /// VTK Interface
     void giveCompositeExportData(std::vector< VTKPiece > &vtkPieces, IntArray &primaryVarsToExport, IntArray &internalVarsToExport, IntArray cellVarsToExport, TimeStep *tStep) override;
+    
+    int mapStateVariables(Domain &iOldDom, const TimeStep &iTStep) override;
 
 };
 } /* namespace oofem */
