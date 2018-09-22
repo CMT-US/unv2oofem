@@ -1496,10 +1496,7 @@ void save_components(T &list, DataStream &stream, ContextMode mode)
                 THROW_CIOERR(CIO_IOERR);
             }
         }
-        auto iores = object->saveContext(stream, mode);
-        if ( iores != CIO_OK ) {
-            THROW_CIOERR(iores);
-        }
+        object->saveContext(stream, mode);
     }
 }
 
@@ -1523,15 +1520,12 @@ void restore_components(T &list, DataStream &stream, ContextMode mode, const C &
             }
             list[i-1] = creator(name, i);
         }
-        auto iores = list[i-1]->restoreContext(stream, mode);
-        if ( iores != CIO_OK ) {
-            THROW_CIOERR(iores);
-        }
+        list[i-1]->restoreContext(stream, mode);
     }
 }
 
 
-contextIOResultType
+void
 Domain :: saveContext(DataStream &stream, ContextMode mode)
 {
     if ( !stream.write(this->giveSerialNumber()) ) {
@@ -1553,17 +1547,12 @@ Domain :: saveContext(DataStream &stream, ContextMode mode)
 
     auto ee = this->giveErrorEstimator();
     if ( ee ) {
-        contextIOResultType iores;
-        if ( ( iores = ee->saveContext(stream, mode) ) != CIO_OK ) {
-            THROW_CIOERR(iores);
-        }
+        ee->saveContext(stream, mode);
     }
-
-    return CIO_OK;
 }
 
 
-contextIOResultType
+void
 Domain :: restoreContext(DataStream &stream, ContextMode mode)
 {
     bool domainUpdated = false;
@@ -1622,10 +1611,7 @@ Domain :: restoreContext(DataStream &stream, ContextMode mode)
         if ( domainUpdated ) {
             ee->setDomain(this);
         }
-        contextIOResultType iores;
-        if ( ( iores = ee->restoreContext(stream, mode) ) != CIO_OK ) {
-            THROW_CIOERR(iores);
-        }
+        ee->restoreContext(stream, mode);
     }
 
     if ( domainUpdated ) {
@@ -1633,8 +1619,6 @@ Domain :: restoreContext(DataStream &stream, ContextMode mode)
             this->smoother->clear();
         }
     }
-
-    return CIO_OK;
 }
 
 #ifdef __PARALLEL_MODE

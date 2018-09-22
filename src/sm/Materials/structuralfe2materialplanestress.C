@@ -704,27 +704,19 @@ StructuralFE2MaterialPlaneStressStatus :: updateYourself(TimeStep *tStep)
 }
 
 
-contextIOResultType
-StructuralFE2MaterialPlaneStressStatus :: saveContext(DataStream &stream, ContextMode mode, void *obj)
+void
+StructuralFE2MaterialPlaneStressStatus :: saveContext(DataStream &stream, ContextMode mode)
 {
-    contextIOResultType iores;
-    if ( ( iores = StructuralFE2MaterialPlaneStressStatus :: saveContext(stream, mode, obj) ) != CIO_OK ) {
-        THROW_CIOERR(iores);
-    }
-
-    return this->rve->saveContext(stream, mode);
+    StructuralMaterialStatus :: saveContext(stream, mode);
+    this->rve->saveContext(stream, mode);
 }
 
 
-contextIOResultType
-StructuralFE2MaterialPlaneStressStatus :: restoreContext(DataStream &stream, ContextMode mode, void *obj)
+void
+StructuralFE2MaterialPlaneStressStatus :: restoreContext(DataStream &stream, ContextMode mode)
 {
-    contextIOResultType iores;
-    if ( ( iores = StructuralFE2MaterialPlaneStressStatus :: restoreContext(stream, mode, obj) ) != CIO_OK ) {
-        THROW_CIOERR(iores);
-    }
-
-    return this->rve->restoreContext(stream, mode);
+    StructuralMaterialStatus :: restoreContext(stream, mode);
+    this->rve->restoreContext(stream, mode);
 }
 
 double StructuralFE2MaterialPlaneStressStatus :: giveRveLength()

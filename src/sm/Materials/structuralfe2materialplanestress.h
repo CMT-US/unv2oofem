@@ -159,14 +159,14 @@ public:
     FloatMatrix &givedRStressdGTangent() { return dRStressdGTangent; }
     void setdRStressdGTangent(const FloatMatrix &iTangent) {dRStressdGTangent = iTangent; olddRSdGTangent = false;}
 
-    virtual const char *giveClassName() const { return "StructuralFE2MaterialPlaneStressStatus"; }
+    const char *giveClassName() const override { return "StructuralFE2MaterialPlaneStressStatus"; }
 
-    virtual void initTempStatus();
+    void initTempStatus() override;
 
-    virtual void updateYourself(TimeStep *tStep);
+    void updateYourself(TimeStep *tStep) override;
 
-    virtual contextIOResultType saveContext(DataStream &stream, ContextMode mode, void *obj = NULL);
-    virtual contextIOResultType restoreContext(DataStream &stream, ContextMode mode, void *obj = NULL);
+    void saveContext(DataStream &stream, ContextMode mode) override;
+    void restoreContext(DataStream &stream, ContextMode mode) override;
 
     const FloatArray &giveNormal() const { return mNormalDir; }
     void letNormalBe(FloatArray iN) { mNormalDir = std :: move(iN); }
@@ -174,8 +174,8 @@ public:
     double giveRveLength();
 
     /// Functions for MaterialStatusMapperInterface
-    virtual void copyStateVariables(const MaterialStatus &iStatus);
-    virtual void addStateVariables(const MaterialStatus &iStatus) {OOFEM_ERROR("Not implemented.")};
+    void copyStateVariables(const MaterialStatus &iStatus) override;
+    void addStateVariables(const MaterialStatus &iStatus) override {OOFEM_ERROR("Not implemented.")};
 
     // For debugging only
     bool mNewlyInitialized;
@@ -253,13 +253,13 @@ public:
     StructuralFE2MaterialPlaneStress(int n, Domain * d);
     virtual ~StructuralFE2MaterialPlaneStress();
 
-    virtual IRResultType initializeFrom(InputRecord *ir);
-    virtual void giveInputRecord(DynamicInputRecord &input);
-    virtual const char *giveInputRecordName() const { return _IFT_StructuralFE2MaterialPlaneStress_Name; }
-    virtual const char *giveClassName() const { return "StructuralFE2MaterialPlaneStress"; }
-    virtual bool isCharacteristicMtrxSymmetric(MatResponseMode rMode) { return true; }
+    IRResultType initializeFrom(InputRecord *ir) override;
+    void giveInputRecord(DynamicInputRecord &input) override;
+    const char *giveInputRecordName() const override { return _IFT_StructuralFE2MaterialPlaneStress_Name; }
+    const char *giveClassName() const override { return "StructuralFE2MaterialPlaneStress"; }
+    bool isCharacteristicMtrxSymmetric(MatResponseMode rMode) override { return true; }
 
-    virtual MaterialStatus *CreateStatus(GaussPoint *gp) const;
+    MaterialStatus *CreateStatus(GaussPoint *gp) const override;
     // stress computation methods
     virtual void giveRealStressVector_3d(FloatArray &answer, GaussPoint *gp, const FloatArray &reducedE, TimeStep *tStep);
     virtual void giveRealStressVector_StressControl(FloatArray &answer, GaussPoint *gp, const FloatArray &reducedE, const IntArray &strainControl, TimeStep *tStep);
@@ -282,4 +282,4 @@ public:
 };
 
 } // end namespace oofem
-#endif // structuralfe2material_h
+#endif // structuralfe2materialplanestress_h
