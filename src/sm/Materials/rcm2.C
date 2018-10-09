@@ -867,13 +867,20 @@ RCM2Material :: giveIPValue(FloatArray &answer, GaussPoint *gp, InternalStateTyp
         }
 
         return 1;
-    } else if (type == IST_CrackWidth ) {
-        const double &crackStrain = status->giveCrackStrain(1);
-        const double &h = status->giveCharLength(1);
+	
+    } else if ( type == IST_CrackWidth ) {
+        double width;
         answer.resize(1);
-        answer.at(1) = crackStrain*h;
+        answer.zero();
 
-        return 1;
+        // MAX WIDTH
+        width = 0.;
+        for ( int i = 1; i <= status->giveNumberOfActiveCracks(); i++ ) {
+	  width = max( width, status->giveCharLength(i) * status->giveCrackStrain(i) );
+        }
+        answer.at(1) = width;
+	return 1;
+
     } else {
         return StructuralMaterial :: giveIPValue(answer, gp, type, tStep);
     }
@@ -976,8 +983,8 @@ RCM2Material :: givePlateLayerStiffMtrx(FloatMatrix &answer,
 
 
 
-RCM2MaterialStatus :: RCM2MaterialStatus(int n, Domain *d, GaussPoint *g) :
-    StructuralMaterialStatus(n, d, g), crackStatuses(3), tempCrackStatuses(3),
+RCM2MaterialStatus :: RCM2MaterialStatus(GaussPoint *g) :
+    StructuralMaterialStatus(g), crackStatuses(3), tempCrackStatuses(3),
     maxCrackStrains(3), tempMaxCrackStrains(3), crackStrainVector(3),
     oldCrackStrainVector(3), crackDirs(3, 3), tempCrackDirs(3, 3), charLengths(3),
     //minEffStrainsForFullyOpenCrack(3),

@@ -68,7 +68,7 @@ protected:
     double gamma, temp_gamma;
 
 public:
-    PlasticMaterialStatus(int n, Domain * d, GaussPoint * g, int statusSize);
+    PlasticMaterialStatus(GaussPoint * g, int statusSize);
     virtual ~PlasticMaterialStatus();
 
     void printOutputAt(FILE *file, TimeStep *tStep) override;
@@ -98,8 +98,6 @@ public:
     void letTempStateFlagBe(int v) { temp_state_flag = v; }
 
     const char *giveClassName() const override { return "PlasticMaterialStatus"; }
-
-    void printYourself() override;
 
     /// Functions for MaterialStatusMapperInterface
     void copyStateVariables(const MaterialStatus &iStatus) override;

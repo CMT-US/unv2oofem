@@ -51,8 +51,8 @@ REGISTER_Material(RVEStokesFlow);
 
 int RVEStokesFlow :: n = 1;
 
-RVEStokesFlowMaterialStatus :: RVEStokesFlowMaterialStatus(int n, Domain *d, GaussPoint *g, const std :: string &inputfile) :
-    TransportMaterialStatus(n, d, g), oldTangent(true)
+RVEStokesFlowMaterialStatus :: RVEStokesFlowMaterialStatus(int n, int rank, GaussPoint *g, const std :: string &inputfile) :
+    TransportMaterialStatus(g), oldTangent(true)
 {
     OOFEM_LOG_INFO( "************************** Instanciating microproblem from file %s\n", inputfile.c_str() );
     OOFEMTXTDataReader dr( inputfile.c_str() );
@@ -68,8 +68,8 @@ RVEStokesFlowMaterialStatus :: RVEStokesFlowMaterialStatus(int n, Domain *d, Gau
 
     std :: ostringstream name;
     name << this->rve->giveOutputBaseFileName() << "-gp" << n;
-    if ( this->domain->giveEngngModel()->isParallel() && this->domain->giveEngngModel()->giveNumberOfProcesses() > 1 ) {
-        name << "." << this->domain->giveEngngModel()->giveRank();
+    if ( rank >= 0 ) {
+        name << "." << rank;
     }
     this->rve->letOutputBaseFileNameBe( name.str() );
 
@@ -237,7 +237,11 @@ RVEStokesFlow :: giveCharacteristicMatrix(FloatMatrix &answer, MatResponseMode, 
 MaterialStatus *
 RVEStokesFlow :: CreateStatus(GaussPoint *gp) const
 {
-    return new RVEStokesFlowMaterialStatus(n++, this->giveDomain(), gp, this->rveFilename);
+    int rank = -1;
+    if ( this->domain->giveEngngModel()->isParallel() && this->domain->giveEngngModel()->giveNumberOfProcesses() > 1 ) {
+        rank = this->domain->giveEngngModel()->giveRank();
+    }
+    return new RVEStokesFlowMaterialStatus(n++, rank, gp, this->rveFilename);
 }
 
 void

@@ -113,7 +113,7 @@ protected:
     FloatArray tempSlipGradVector;
 
 public:
-    StructuralFE2MaterialPlaneStressStatus(int n, int j, Domain * d, GaussPoint * g,  const std :: string & inputfile);
+    StructuralFE2MaterialPlaneStressStatus(int n, int j, int rank, GaussPoint * g,  const std :: string & inputfile);
     virtual ~StructuralFE2MaterialPlaneStressStatus() {};
 
     EngngModel *giveRVE() { return this->rve.get(); }
@@ -124,7 +124,7 @@ public:
     void computeTangent(TimeStep *tStep);
 
     /// Creates/Initiates the RVE problem.
-    bool createRVE(int n, int j, const std :: string &inputfile);
+    bool createRVE(int n, int j, const std :: string &inputfile, int rank);
 
     /// Copies time step data to RVE.
     void setTimeStep(TimeStep *tStep);

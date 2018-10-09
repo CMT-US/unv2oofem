@@ -62,7 +62,7 @@ KelvinChainSolidMaterial :: giveEModulus(GaussPoint *gp, TimeStep *tStep)
     double lambdaMu, Emu;
     double sum = 0.0;
 
-    if (  (tStep->giveIntrinsicTime() < this->castingTime)  ) {
+    if (   ! Material :: isActivated( tStep )   ) {
       OOFEM_ERROR("Attempted to evaluate E modulus at time lower than casting time");
     }
 
@@ -95,7 +95,7 @@ KelvinChainSolidMaterial :: giveEigenStrainVector(FloatArray &answer, GaussPoint
     FloatMatrix C;
     KelvinChainSolidMaterialStatus *status = static_cast< KelvinChainSolidMaterialStatus * >( this->giveStatus(gp) );
 
-   if (  (tStep->giveIntrinsicTime() < this->castingTime)  ) {
+    if (  ! Material :: isActivated( tStep ) )  {
       OOFEM_ERROR("Attempted to evaluate creep strain for time lower than casting time");
     }
 
@@ -197,7 +197,10 @@ KelvinChainSolidMaterial :: computeHiddenVars(GaussPoint *gp, TimeStep *tStep)
     FloatMatrix D;
     KelvinChainSolidMaterialStatus *status = static_cast< KelvinChainSolidMaterialStatus * >( this->giveStatus(gp) );
 
-    if ( ( !this->isActivated(tStep) ) || ( tStep->giveIntrinsicTime() < this->castingTime ) ) {
+    // goes there if the viscoelastic material does not exist and at the same time the precastingtime mat is not provided
+    //    if (  ! this->isActivated( tStep ) )  {
+    // goes there if the viscoelastic material does not exist yet
+    if (  ! Material :: isActivated( tStep ) )  {
       help.resize(StructuralMaterial :: giveSizeOfVoigtSymVector( gp->giveMaterialMode() ) );
       help.zero();
       for ( int mu = 1; mu <= nUnits; mu++ ) {
@@ -247,7 +250,7 @@ KelvinChainSolidMaterial :: CreateStatus(GaussPoint *gp) const
  * creates a new material status corresponding to this class
  */
 {
-    return new KelvinChainSolidMaterialStatus(1, this->giveDomain(), gp, nUnits);
+    return new KelvinChainSolidMaterialStatus(gp, nUnits);
 }
 
 IRResultType
@@ -267,9 +270,8 @@ KelvinChainSolidMaterial :: computeCreepFunction(double t, double t_prime, Gauss
 
 /****************************************************************************************/
 
-KelvinChainSolidMaterialStatus :: KelvinChainSolidMaterialStatus(int n, Domain *d,
-                                                                 GaussPoint *g, int nunits) :
-    RheoChainMaterialStatus(n, d, g, nunits) { }
+KelvinChainSolidMaterialStatus :: KelvinChainSolidMaterialStatus(GaussPoint *g, int nunits) :
+    RheoChainMaterialStatus(g, nunits) { }
 
 void
 KelvinChainSolidMaterialStatus :: printOutputAt(FILE *file, TimeStep *tStep)

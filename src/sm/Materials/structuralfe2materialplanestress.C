@@ -135,10 +135,16 @@ StructuralFE2MaterialPlaneStress :: giveInputRecord(DynamicInputRecord &input)
 MaterialStatus *
 StructuralFE2MaterialPlaneStress :: CreateStatus(GaussPoint *gp) const
 {
+    int rank = -1;
+    auto emodel = this->domain->giveEngngModel();
+    if ( emodel->isParallel() && emodel->giveNumberOfProcesses() > 1 ) {
+        rank = emodel->giveRank();
+    }
+    
     if ( allGPRes ) {
         int nel = gp->giveElement()->giveGlobalNumber();
         int gpn = gp->giveNumber();
-        return new StructuralFE2MaterialPlaneStressStatus(gpn, nel, this->giveDomain(), gp, this->inputfile);
+        return new StructuralFE2MaterialPlaneStressStatus(gpn, nel, rank, gp, this->inputfile);
     } else if ( !(outputSelected.giveSize() == 0) ) {
         int nel = gp->giveElement()->giveGlobalNumber();
         int gpn = gp->giveNumber();
@@ -159,12 +165,12 @@ StructuralFE2MaterialPlaneStress :: CreateStatus(GaussPoint *gp) const
         }
 
         if ( flag )  {
-            return new StructuralFE2MaterialPlaneStressStatus(nel, gpn, this->giveDomain(), gp, this->inputfile);
+            return new StructuralFE2MaterialPlaneStressStatus(nel, gpn, rank, gp, this->inputfile);
         } else {
-            return new StructuralFE2MaterialPlaneStressStatus(1, 1, this->giveDomain(), gp, this->inputfile);
+            return new StructuralFE2MaterialPlaneStressStatus(1, 1, rank, gp, this->inputfile);
         }
     } else {
-        return new StructuralFE2MaterialPlaneStressStatus(1, 1, this->giveDomain(), gp, this->inputfile);
+        return new StructuralFE2MaterialPlaneStressStatus(1, 1, rank, gp, this->inputfile);
     }
 }
 
@@ -566,15 +572,15 @@ void StructuralFE2MaterialPlaneStress :: givePlaneStressStiffMtrx(FloatMatrix &a
 }
 //=============================================================================
 
-StructuralFE2MaterialPlaneStressStatus :: StructuralFE2MaterialPlaneStressStatus(int n, int j, Domain * d, GaussPoint * g,  const std :: string & inputfile) :
-StructuralMaterialStatus(n, d, g),
+StructuralFE2MaterialPlaneStressStatus :: StructuralFE2MaterialPlaneStressStatus(int n, int j, int rank, GaussPoint * g,  const std :: string & inputfile) :
+StructuralMaterialStatus(g),
 mNewlyInitialized(true)
 {
 	mInputFile = inputfile;
 
     this->oldTangent = true;
 
-    if ( !this->createRVE(n, j, inputfile) ) {
+    if ( !this->createRVE(n, j, inputfile, rank) ) {
         OOFEM_ERROR("Couldn't create RVE");
     }
 
@@ -593,7 +599,7 @@ PrescribedFieldsGradientsHomogenization* StructuralFE2MaterialPlaneStressStatus 
 }
 
 bool
-StructuralFE2MaterialPlaneStressStatus :: createRVE(int n, int j, const std :: string &inputfile)
+StructuralFE2MaterialPlaneStressStatus :: createRVE(int n, int j, const std :: string &inputfile, int rank)
 {
     OOFEMTXTDataReader dr( inputfile.c_str() );
     this->rve = InstanciateProblem(dr, _processor, 0); // Everything but nrsolver is updated.
@@ -606,8 +612,8 @@ StructuralFE2MaterialPlaneStressStatus :: createRVE(int n, int j, const std :: s
 
     std :: ostringstream name;
     name << this->rve->giveOutputBaseFileName() << "-el" << n << "-gp" << j;
-    if ( this->domain->giveEngngModel()->isParallel() && this->domain->giveEngngModel()->giveNumberOfProcesses() > 1 ) {
-        name << "." << this->domain->giveEngngModel()->giveRank();
+    if ( rank >= 0 ) {
+        name << "." << rank;
     }
 
     this->rve->letOutputBaseFileNameBe( name.str() );

@@ -46,22 +46,16 @@ namespace oofem {
 REGISTER_Material(BondCEBMaterial);
 
 BondCEBMaterial :: BondCEBMaterial(int n, Domain *d) : StructuralInterfaceMaterial(n, d)
-{
-    tauf = 0.;
-    alpha = 0.4;
-}
+{}
 
 
-BondCEBMaterial :: ~BondCEBMaterial() { }
-
-
-void
-BondCEBMaterial :: giveEngTraction_3d(FloatArray &answer, GaussPoint *gp, const FloatArray &jump, TimeStep *tStep)
+FloatArrayF<3>
+BondCEBMaterial :: giveEngTraction_3d(const FloatArrayF<3> &jump, GaussPoint *gp, TimeStep *tStep) const
 {
     BondCEBMaterialStatus *status = static_cast< BondCEBMaterialStatus * >( this->giveStatus(gp) );
 
     // normal traction evaluated elastically
-    answer.resize(3);
+    FloatArrayF<3> answer;
     answer.at(1) = kn * jump.at(1);
 
     // trial values of shear tractions evaluated elastically
@@ -96,21 +90,20 @@ BondCEBMaterial :: giveEngTraction_3d(FloatArray &answer, GaussPoint *gp, const 
     status->letTempJumpBe(jump);
     status->letTempTractionBe(answer);
     status->setTempKappa(tempKappa);
+
+    return answer;
 }
 
 
-void
-BondCEBMaterial :: give3dStiffnessMatrix_Eng(FloatMatrix &answer, MatResponseMode rMode, GaussPoint *gp, TimeStep *tStep)
+FloatMatrixF<3,3>
+BondCEBMaterial :: give3dStiffnessMatrix_Eng(MatResponseMode rMode, GaussPoint *gp, TimeStep *tStep) const
 {
     ///@todo Only elastic tangent supported
-    answer.resize(3, 3);
-    answer.zero();
-    answer.at(1, 1) = kn;
-    answer.at(2, 2) = answer.at(3, 3) = ks;
+    return diag<3>({kn, ks, ks});
 }
 
 double
-BondCEBMaterial :: evaluateBondStress(const double kappa)
+BondCEBMaterial :: evaluateBondStress(const double kappa) const
 {
     if ( kappa <= 0. )
         return 0.;
@@ -181,14 +174,8 @@ BondCEBMaterial :: giveInputRecord(DynamicInputRecord &input)
 
 
 
-BondCEBMaterialStatus :: BondCEBMaterialStatus(int n, Domain *d, GaussPoint *g) : StructuralInterfaceMaterialStatus(n, d, g)
-{
-    kappa = tempKappa = 0.0;
-}
-
-
-BondCEBMaterialStatus :: ~BondCEBMaterialStatus()
-{ }
+BondCEBMaterialStatus :: BondCEBMaterialStatus(GaussPoint *g) : StructuralInterfaceMaterialStatus(g)
+{}
 
 
 void

@@ -78,15 +78,8 @@
 
 namespace oofem {
 XfemStructuralElementInterface :: XfemStructuralElementInterface(Element *e) :
-    XfemElementInterface(e),
-    mpCZMat(nullptr),
-    mCZMaterialNum(-1),
-    mCSNumGaussPoints(4),
-    mIncludeBulkJump(true),
-    mIncludeBulkCorr(true)
+    XfemElementInterface(e)
 {}
-
-XfemStructuralElementInterface :: ~XfemStructuralElementInterface() {}
 
 bool XfemStructuralElementInterface :: XfemElementInterface_updateIntegrationRule()
 {
@@ -141,9 +134,9 @@ bool XfemStructuralElementInterface :: XfemElementInterface_updateIntegrationRul
                     firstIntersection = false;
 
                     // Use XfemElementInterface_partitionElement to subdivide the element
-                    for ( int i = 0; i < int ( pointPartitions.size() ); i++ ) {
+                    for ( auto &partition : pointPartitions ) {
                         // Triangulate the subdivisions
-                        this->XfemElementInterface_partitionElement(mSubTri, pointPartitions [ i ]);
+                        this->XfemElementInterface_partitionElement(mSubTri, partition);
                     }
 
 
@@ -192,7 +185,7 @@ bool XfemStructuralElementInterface :: XfemElementInterface_updateIntegrationRul
                             }
 
                             FloatArray crackNormal = {
-                                -crackTang.at(2), crackTang.at(1)
+                                -crackTang.at(2), crackTang.at(1), 0.
                             };
 
                             mpCZIntegrationRules_tmp [ cz_rule_ind ]->SetUpPointsOn2DEmbeddedLine(mCSNumGaussPoints, matMode,
@@ -345,9 +338,7 @@ bool XfemStructuralElementInterface :: XfemElementInterface_updateIntegrationRul
                                     crackTang = {0.0, 1.0};
                                 }
 
-                                FloatArray crackNormal = {
-                                    -crackTang.at(2), crackTang.at(1)
-                                };
+                                FloatArrayF<3> crackNormal = { -crackTang.at(2), crackTang.at(1), 0.};
 
                                 mpCZIntegrationRules_tmp [ newRuleInd ]->SetUpPointsOn2DEmbeddedLine(mCSNumGaussPoints, matMode,
                                                                                                  crackPolygon [ segIndex ], crackPolygon [ segIndex + 1 ]);
@@ -1022,39 +1013,33 @@ void XfemStructuralElementInterface :: computeCohesiveForces(FloatArray &answer,
 
 void XfemStructuralElementInterface :: computeGlobalCohesiveTractionVector(FloatArray &oT, const FloatArray &iJump, const FloatArray &iCrackNormal, const FloatMatrix &iNMatrix, GaussPoint &iGP, TimeStep *tStep)
 {
-    FloatMatrix F;
-    F.resize(3, 3);
-    F.beUnitMatrix();         // TODO: Compute properly
+    auto F = eye<3>(); // TODO: Compute properly
 
-    FloatArray jump3D = {iJump.at(1), iJump.at(2), 0.0};
+    FloatArrayF<3> jump3D = {iJump.at(1), iJump.at(2), 0.0};
 
-    FloatArray crackNormal3D = {iCrackNormal.at(1), iCrackNormal.at(2), 0.0};
+    FloatArrayF<3> crackNormal3D = {iCrackNormal.at(1), iCrackNormal.at(2), 0.0};
 
-    FloatArray ez = {0.0, 0.0, 1.0};
-    FloatArray crackTangent3D;
-    crackTangent3D.beVectorProductOf(crackNormal3D, ez);
+    FloatArrayF<3> ez = {0.0, 0.0, 1.0};
+    auto crackTangent3D = cross(crackNormal3D, ez);
 
-    FloatMatrix locToGlob(3, 3);
-    locToGlob.setColumn(crackTangent3D, 1);
-    locToGlob.setColumn(crackNormal3D, 2);
-    locToGlob.setColumn(ez, 3);
+    FloatMatrixF<3,3> locToGlob;
+    locToGlob.setColumn(crackTangent3D, 0);
+    locToGlob.setColumn(crackNormal3D, 1);
+    locToGlob.setColumn(ez, 2);
 
-    FloatArray TLoc, jump3DLoc, TLocRenumbered(3);
-    jump3DLoc.beTProductOf(locToGlob, jump3D);
+    FloatArrayF<3> jump3DLoc = Tdot(locToGlob, jump3D);
 
-    FloatArray jump3DLocRenumbered = {jump3DLoc.at(3), jump3DLoc.at(1), jump3DLoc.at(2)};
+    FloatArrayF<3> jump3DLocRenumbered = {jump3DLoc.at(3), jump3DLoc.at(1), jump3DLoc.at(2)};
 
     StructuralInterfaceMaterial *intMat = dynamic_cast<StructuralInterfaceMaterial*>(mpCZMat);
-    if ( intMat ) {
-        intMat->giveFirstPKTraction_3d(TLocRenumbered, & iGP, jump3DLocRenumbered, F, tStep);
-    } else {
+    if ( intMat == nullptr ) {
         OOFEM_ERROR("Failed to cast StructuralInterfaceMaterial*.")
     }
+    auto TLocRenumbered = intMat->giveFirstPKTraction_3d(jump3DLocRenumbered, F, & iGP, tStep);
 
-    TLoc = {TLocRenumbered.at(2), TLocRenumbered.at(3), TLocRenumbered.at(1)};
+    FloatArrayF<3> TLoc = {TLocRenumbered.at(2), TLocRenumbered.at(3), TLocRenumbered.at(1)};
 
-    FloatArray T;
-    T.beProductOf(locToGlob, TLoc);
+    auto T = dot(locToGlob, TLoc);
 
     oT = {T.at(1), T.at(2)};
 }
@@ -1096,7 +1081,7 @@ void XfemStructuralElementInterface :: computeCohesiveTangent(FloatMatrix &answe
                     F.resize(3, 3);
                     F.beUnitMatrix();                     // TODO: Compute properly
 
-                    FloatMatrix K3DRenumbered, K3DGlob;
+                    FloatMatrix K3DGlob;
 
                     FloatMatrix K2D;
                     K2D.resize(2, 2);
@@ -1106,11 +1091,9 @@ void XfemStructuralElementInterface :: computeCohesiveTangent(FloatMatrix &answe
                         ///////////////////////////////////////////////////
                         // Analytical tangent
 
-                        FloatMatrix K3D;
-                        intMat->give3dStiffnessMatrix_dTdj(K3DRenumbered, TangentStiffness, gp, tStep);
+                        auto K3DRenumbered = intMat->give3dStiffnessMatrix_dTdj(TangentStiffness, gp, tStep);
 
-                        K3D.resize(3, 3);
-                        K3D.zero();
+                        FloatMatrix K3D(3,3);
                         K3D.at(1, 1) = K3DRenumbered.at(2, 2);
                         K3D.at(1, 2) = K3DRenumbered.at(2, 3);
                         K3D.at(1, 3) = K3DRenumbered.at(2, 1);

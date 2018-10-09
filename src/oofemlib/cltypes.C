@@ -89,6 +89,7 @@ InternalStateValueType giveInternalStateValueType(InternalStateType type)
     case IST_CurvatureTensor:
     case IST_CurvatureTensorTemp:
     case IST_EigenStrainTensor:
+    case IST_CrackStrainTensor:
         return ISVT_TENSOR_S3E;
 
     case IST_StressTensor:
@@ -146,6 +147,7 @@ InternalStateValueType giveInternalStateValueType(InternalStateType type)
     case IST_HumidityFlow:
     case IST_CrackDirs:
     case IST_CrackStatuses:
+    case IST_CrackStatusesTemp:
     case IST_CrackVector:
     case IST_2ndCrackVector:
     case IST_3rdCrackVector:      
@@ -210,7 +212,8 @@ InternalStateValueType giveInternalStateValueType(InternalStateType type)
     case IST_ResidualTensileStrength:
     case IST_CrackIndex:
     case IST_FiberStressNL:
-    case IST_FiberStressLocal:     
+    case IST_FiberStressLocal:
+    case IST_CrackSlip:
         return ISVT_SCALAR;
 
     default:

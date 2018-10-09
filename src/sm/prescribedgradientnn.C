@@ -404,7 +404,8 @@ void PrescribedGradientNN :: integrateTangent(FloatMatrix &oTangent, Element *e,
         } else {
             E_n.at(1, 1) = normal.at(1);
         }
-
+        //AS: According to OOFEM convention, the normal is computed as positive inwards, it needs to be negated here to make it consistent with the RVE boundary
+        E_n.negated();
         contrib.beProductOf(E_n, nMatrix);
 
         oTangent.add(detJ * gp->giveWeight(), contrib);

@@ -37,6 +37,8 @@
 
 #include "sm/Elements/Interfaces/structuralinterfaceelement.h"
 #include "gaussintegrationrule.h"
+#include "floatmatrixf.h"
+//#include "floatarrayf.h"
 
 ///@name Input fields for Material
 //@{
@@ -50,7 +52,9 @@ namespace oofem {
 /**
  * This class implements an interface element that connects two nodes.
  * In order to compute the normal and tangential direction of the slip plane, 
- * a reference node or specific direction must be specified in the input.
+ * a reference node or specific direction can be specified in the input.
+ * If neither are specified, then the normal direction are computed from the coordinates
+ * of the element's nodes.
  * The class adjusts dimensionality automatically to 1D, 2D, or 3D depending on domain.
  * @author Jim Brouzoulis
  * @author Borek Patzak
@@ -59,12 +63,12 @@ class IntElPoint : public StructuralInterfaceElement
 {
 protected:
     enum cmode { ie1d_1d, ie1d_2d, ie1d_3d } mode;
-    int referenceNode;
-    FloatArray normal;
-    double area;
+    int referenceNode = 0;
+    FloatArrayF<3> normal;
+    double area = 0.;
+
 public:
     IntElPoint(int n, Domain *d);
-    virtual ~IntElPoint() { }
 
     int computeGlobalCoordinates(FloatArray &answer, const FloatArray &lcoords) override;
 
@@ -85,22 +89,22 @@ public:
     void giveEngTraction(FloatArray &answer, GaussPoint *gp, const FloatArray &jump, TimeStep *tStep) override
     {
         if ( this->giveDomain()->giveNumberOfSpatialDimensions() == 3 ) {
-            this->giveInterfaceCrossSection()->giveEngTraction_3d(answer, gp, jump, tStep);
+            answer = this->giveInterfaceCrossSection()->giveEngTraction_3d(jump, gp, tStep);
         } else if ( this->giveDomain()->giveNumberOfSpatialDimensions() == 2 ) {
-            this->giveInterfaceCrossSection()->giveEngTraction_2d(answer, gp, jump, tStep);
+            answer = this->giveInterfaceCrossSection()->giveEngTraction_2d(jump, gp, tStep);
         } else if ( this->giveDomain()->giveNumberOfSpatialDimensions() == 1 ) {
-            this->giveInterfaceCrossSection()->giveEngTraction_1d(answer, gp, jump, tStep);
+            answer = {this->giveInterfaceCrossSection()->giveEngTraction_1d(jump.at(1), gp, tStep)};
         }
     }
 
     void giveStiffnessMatrix_Eng(FloatMatrix &answer, MatResponseMode rMode, IntegrationPoint *ip, TimeStep *tStep) override
     {
         if ( this->giveDomain()->giveNumberOfSpatialDimensions() == 3 ) {
-            this->giveInterfaceCrossSection()->give3dStiffnessMatrix_Eng(answer, rMode, ip, tStep);
+            answer = this->giveInterfaceCrossSection()->give3dStiffnessMatrix_Eng(rMode, ip, tStep);
         } else if ( this->giveDomain()->giveNumberOfSpatialDimensions() == 2 ) {
-            this->giveInterfaceCrossSection()->give2dStiffnessMatrix_Eng(answer, rMode, ip, tStep);
+            answer = this->giveInterfaceCrossSection()->give2dStiffnessMatrix_Eng(rMode, ip, tStep);
         } else if ( this->giveDomain()->giveNumberOfSpatialDimensions() == 1 ) {
-            this->giveInterfaceCrossSection()->give1dStiffnessMatrix_Eng(answer, rMode, ip, tStep);
+            answer = this->giveInterfaceCrossSection()->give1dStiffnessMatrix_Eng(rMode, ip, tStep);
         }
     }
 
@@ -114,7 +118,9 @@ protected:
     void computeNmatrixAt(GaussPoint *gp, FloatMatrix &answer) override;
     void computeGaussPoints() override;
 
-    void computeLocalSlipDir(FloatArray &normal);
+    //    void computeLocalSlipDir(FloatArrayF &normal);
+    //    void computeLocalSlipDir(FloatArrayF<3> normal);
+        void computeLocalSlipDir(void);    
     cmode giveCoordMode() const { return this->mode; }
     void setCoordMode();
 };

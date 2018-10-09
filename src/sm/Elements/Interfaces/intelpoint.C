@@ -42,6 +42,7 @@
 #include "intarray.h"
 #include "mathfem.h"
 #include "classfactory.h"
+//#include "floatarrayf.h"
 
 #ifdef __OOFEG
  #include "oofeggraphiccontext.h"
@@ -56,10 +57,6 @@ IntElPoint :: IntElPoint(int n, Domain *aDomain) :
     StructuralInterfaceElement(n, aDomain)
 {
     numberOfDofMans = 2;
-    referenceNode = 0;
-    normal.resize(3);
-    normal.zero();
-    area = 1.0;
 }
 
 
@@ -107,7 +104,6 @@ IntElPoint :: computeNmatrixAt(GaussPoint *gp, FloatMatrix &answer)
 //
 {
     setCoordMode();
-    
 
     switch ( mode ) {
     case ie1d_1d:
@@ -164,19 +160,17 @@ IntElPoint :: computeTransformationMatrixAt(GaussPoint *gp, FloatMatrix &answer)
         //FloatMatrix test;
         //test.beLocalCoordSys(normal.normalize());
 
-        FloatArray ly(3), lz(3);
-        normal.normalize();
-        ly.zero();
+        FloatArrayF<3> ly;
         if ( fabs( normal.at(1) ) > fabs( normal.at(2) ) ) {
             ly.at(2) = 1.;
         } else {
             ly.at(1) = 1.;
         }
 
-        lz.beVectorProductOf(normal, ly);
-        lz.normalize();
-        ly.beVectorProductOf(lz, normal);
-        ly.normalize();
+        auto lz = cross(normal, ly);
+        lz /= norm(lz);
+        ly = cross(lz, normal);
+        ly /= norm(ly);
 
         answer.resize(3, 3);
         for ( int i = 1; i <= 3; i++ ) {
@@ -196,7 +190,6 @@ IntElPoint :: computeTransformationMatrixAt(GaussPoint *gp, FloatMatrix &answer)
 
 void
 IntElPoint :: computeGaussPoints()
-// Sets up the array of Gauss Points of the receiver.
 {
     if ( integrationRulesArray.size() == 0 ) {
         integrationRulesArray.resize(1);
@@ -236,17 +229,31 @@ IntElPoint :: initializeFrom(InputRecord *ir)
         return result;
     }
 
-    if ( ir->hasField(_IFT_IntElPoint_refnode) &&  ir->hasField(_IFT_IntElPoint_normal) ) {
+    if ( ir->hasField(_IFT_IntElPoint_refnode) && ir->hasField(_IFT_IntElPoint_normal) ) {
         OOFEM_WARNING("Ambiguous input: 'refnode' and 'normal' cannot both be specified");
         return IRRT_BAD_FORMAT;
     }
+
     IR_GIVE_OPTIONAL_FIELD(ir, referenceNode, _IFT_IntElPoint_refnode);
-    IR_GIVE_OPTIONAL_FIELD(ir, normal, _IFT_IntElPoint_normal);
+    FloatArray n;
+    IR_GIVE_OPTIONAL_FIELD(ir, n, _IFT_IntElPoint_normal);
+    normal = n;
     
+    /*if ( ir->hasField(_IFT_IntElPoint_refnode) ) {
+        IR_GIVE_OPTIONAL_FIELD(ir, referenceNode, _IFT_IntElPoint_refnode);
+        normal = *domain->giveNode(this->referenceNode)->giveCoordinates() - *this->giveNode(1)->giveCoordinates();
+    } else {
+        FloatArray n;
+        IR_GIVE_OPTIONAL_FIELD(ir, n, _IFT_IntElPoint_normal);
+        normal = n;
+    }
+    normal /= norm(normal);
+    */
+
     this->area = 1.0; // Default area ///@todo Make non-optional? /JB
     IR_GIVE_OPTIONAL_FIELD(ir, this->area, _IFT_IntElPoint_area);
-    
-    this->computeLocalSlipDir(normal); 
+
+    this->computeLocalSlipDir();     
     return IRRT_OK;
 }
 
@@ -295,22 +302,27 @@ IntElPoint :: giveDofManDofIDMask(int inode, IntArray &answer) const
 
 
 void
-IntElPoint :: computeLocalSlipDir(FloatArray &normal)
+IntElPoint :: computeLocalSlipDir(void)
 {
-    normal.resizeWithValues(3);
     if ( this->referenceNode ) {
         // normal
-        normal.beDifferenceOf(*domain->giveNode(this->referenceNode)->giveCoordinates(), *this->giveNode(1)->giveCoordinates());
+        normal = *domain->giveNode(this->referenceNode)->giveCoordinates() - *this->giveNode(1)->giveCoordinates();
     } else {
-        if ( normal.at(1) == 0 && normal.at(2) == 0 && normal.at(3) == 0 ) {
-            OOFEM_ERROR("Normal is not defined (referenceNode=0,normal=(0,0,0))");
-        }
+
+      if ( normal.at(1) == 0. && normal.at(2) == 0. && normal.at(3) == 0. ) {
+	// let the element compute the slip direction if the nodes' cooridantes are different
+        normal = *this->giveNode(2)->giveCoordinates() - *this->giveNode(1)->giveCoordinates();
+	
+	// final check
+	if ( normal.at(1) == 0. && normal.at(2) == 0. && normal.at(3) == 0. ) {
+	  OOFEM_ERROR("Normal is not defined (referenceNode=0,normal=(0,0,0))");
+	}
+      }
     }
 
-    normal.normalize();
+    normal /= norm(normal);
 }
-
-
+  
 
 #ifdef __OOFEG
 void IntElPoint :: drawRawGeometry(oofegGraphicContext &gc, TimeStep *tStep)
@@ -395,7 +407,7 @@ void IntElPoint :: drawScalar(oofegGraphicContext &gc, TimeStep *tStep)
     result += giveIPValue(v1, iRule->getIntegrationPoint(0), gc.giveIntVarType(), tStep);
 
 
-    for ( GaussPoint *gp: *iRule ) {
+    for ( auto &gp: *iRule ) {
         result = 0;
         result += giveIPValue(v1, gp, gc.giveIntVarType(), tStep);
         if ( result != 1 ) {

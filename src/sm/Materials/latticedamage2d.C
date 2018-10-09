@@ -77,9 +77,11 @@ LatticeDamage2d :: initializeFrom(InputRecord *ir)
     result = RandomMaterialExtensionInterface :: initializeFrom(ir);
     if ( result != IRRT_OK ) return result;
 
-    double value = 0.;
+    // done in structural material
+    /*    double value = 0.;
     IR_GIVE_FIELD(ir, value, _IFT_IsotropicLinearElasticMaterial_talpha);
     propertyDictionary.add(tAlpha, value);
+    */
 
     IR_GIVE_FIELD(ir, eNormal, _IFT_LatticeDamage2d_eNormal);
 
@@ -285,25 +287,24 @@ LatticeDamage2d :: computeStressIndependentStrainVector(FloatArray &answer,
     double length = ( static_cast< LatticeStructuralElement * >( gp->giveElement() ) )->giveLength();
 
     answer.at(1) += this->cAlpha * et.at(1) / length;
-    return;
 }
 
 MaterialStatus *
 LatticeDamage2d :: CreateStatus(GaussPoint *gp) const
 {
-    return new LatticeDamage2dStatus(1, LatticeDamage2d :: domain, gp);
+    return new LatticeDamage2dStatus(gp);
 }
 
 MaterialStatus *
 LatticeDamage2d :: giveStatus(GaussPoint *gp) const
 {
     MaterialStatus *status = static_cast< MaterialStatus * >( gp->giveMaterialStatus() );
-    if ( status == NULL ) {
+    if ( status == nullptr ) {
         // create a new one
         status = this->CreateStatus(gp);
 
-        if ( status != NULL ) {
-            gp->setMaterialStatus( status, this->giveNumber() );
+        if ( status ) {
+            gp->setMaterialStatus( status );
             this->_generateStatusVariables(gp);
         }
     }
@@ -693,8 +694,8 @@ LatticeDamage2d :: giveIPValue(FloatArray &answer,
     }
 }
 
-LatticeDamage2dStatus :: LatticeDamage2dStatus(int n, Domain *d, GaussPoint *g) :
-    LatticeMaterialStatus(n, d, g), RandomMaterialStatusExtensionInterface(), reducedStrain(3), tempReducedStrain(3)
+LatticeDamage2dStatus :: LatticeDamage2dStatus(GaussPoint *g) :
+    LatticeMaterialStatus(g), RandomMaterialStatusExtensionInterface(), reducedStrain(3), tempReducedStrain(3)
 {
     le = 0.0;
     crack_flag = temp_crack_flag = 0;

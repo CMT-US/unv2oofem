@@ -51,8 +51,8 @@
 namespace oofem {
 REGISTER_Material(ConcreteDPM2);
 
-ConcreteDPM2Status :: ConcreteDPM2Status(int n, Domain *d, GaussPoint *gp) :
-    StructuralMaterialStatus(n, d, gp),
+ConcreteDPM2Status :: ConcreteDPM2Status(GaussPoint *gp) :
+    StructuralMaterialStatus(gp),
     plasticStrain(6),
     tempPlasticStrain(6)
 {
@@ -528,8 +528,9 @@ ConcreteDPM2 :: initializeFrom(InputRecord *ir)
     propertyDictionary.add('E', eM);
     propertyDictionary.add('n', nu);
 
-    IR_GIVE_FIELD(ir, value, _IFT_IsotropicLinearElasticMaterial_talpha);
-    propertyDictionary.add(tAlpha, value);
+    // done in strucutral material
+    //IR_GIVE_FIELD(ir, value, _IFT_IsotropicLinearElasticMaterial_talpha);
+    //propertyDictionary.add(tAlpha, value);
 
     gM = eM / ( 2. * ( 1. + nu ) );
     kM = eM / ( 3. * ( 1. - 2. * nu ) );
@@ -2899,6 +2900,6 @@ ConcreteDPM2 :: giveIPValue(FloatArray &answer,
 MaterialStatus *
 ConcreteDPM2 :: CreateStatus(GaussPoint *gp) const
 {
-    return new  ConcreteDPM2Status(1, StructuralMaterial :: giveDomain(), gp);
+    return new  ConcreteDPM2Status(gp);
 }
 } //end of namespace

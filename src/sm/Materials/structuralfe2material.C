@@ -103,7 +103,12 @@ StructuralFE2Material :: giveInputRecord(DynamicInputRecord &input)
 MaterialStatus *
 StructuralFE2Material :: CreateStatus(GaussPoint *gp) const
 {
-    return new StructuralFE2MaterialStatus(1, this->giveDomain(), gp, this->inputfile);
+    int rank = -1;
+    auto emodel = this->domain->giveEngngModel();
+    if ( emodel->isParallel() && emodel->giveNumberOfProcesses() > 1 ) {
+        rank = emodel->giveRank();
+    }
+    return new StructuralFE2MaterialStatus(rank, gp, this->inputfile);
 }
 
 
@@ -297,15 +302,15 @@ StructuralFE2Material :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatR
 //=============================================================================
 
 
-StructuralFE2MaterialStatus :: StructuralFE2MaterialStatus(int n, Domain * d, GaussPoint * g,  const std :: string & inputfile) :
-    StructuralMaterialStatus(n, d, g),
+StructuralFE2MaterialStatus :: StructuralFE2MaterialStatus(int rank, GaussPoint * g,  const std :: string & inputfile) :
+    StructuralMaterialStatus(g),
     mNewlyInitialized(true)
 {
     mInputFile = inputfile;
 
     this->oldTangent = true;
 
-    if ( !this->createRVE(n, inputfile) ) {
+    if ( !this->createRVE(1, inputfile, rank) ) { ///@TODO FIXME createRVE
         OOFEM_ERROR("Couldn't create RVE");
     }
 
@@ -319,7 +324,7 @@ PrescribedGradientHomogenization* StructuralFE2MaterialStatus::giveBC()
 
 
 bool
-StructuralFE2MaterialStatus :: createRVE(int n, const std :: string &inputfile)
+StructuralFE2MaterialStatus :: createRVE(int n, const std :: string &inputfile, int rank)
 {
     OOFEMTXTDataReader dr( inputfile.c_str() );
     this->rve = InstanciateProblem(dr, _processor, 0); // Everything but nrsolver is updated.
@@ -332,8 +337,8 @@ StructuralFE2MaterialStatus :: createRVE(int n, const std :: string &inputfile)
 
     std :: ostringstream name;
     name << this->rve->giveOutputBaseFileName() << "-gp" << n;
-    if ( this->domain->giveEngngModel()->isParallel() && this->domain->giveEngngModel()->giveNumberOfProcesses() > 1 ) {
-        name << "." << this->domain->giveEngngModel()->giveRank();
+    if ( rank >= 0 ) {
+        name << "." << rank;
     }
 
     this->rve->letOutputBaseFileNameBe( name.str() );
