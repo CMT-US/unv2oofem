@@ -291,8 +291,9 @@ VTKXMLExportModule :: giveElementCell(IntArray &answer, Element *elem)
 //            1, 2, 5, 4, 3, 6
 //        };
         nodeMapping = {
-            1, 2, 5, 4, 3, 6
+            1, 2, 5, 4, 6, 3
         };
+
     } else {
         OOFEM_ERROR("VTKXMLExportModule: unsupported element geometry type");
     }

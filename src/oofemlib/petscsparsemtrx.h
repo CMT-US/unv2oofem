@@ -46,7 +46,7 @@ namespace oofem {
  */
 class OOFEM_EXPORT PetscSparseMtrx : public SparseMtrx
 {
-protected:
+public:
     Mat mtrx;
     bool symmFlag;
     MatType mType;
@@ -79,6 +79,13 @@ public:
     void times(double x) override;
     void add(double x, SparseMtrx &m) override;
     void addDiagonal(double x, FloatArray &m) override;
+
+    /// Add x to all diagonal entries
+    void addDiagonal(double x);
+
+    /// Add x to diagonal entries given by iLoc
+    void addDiagonal(double x, const IntArray &iLoc);
+
     int buildInternalStructure(EngngModel *eModel, int n, int m, const IntArray &I, const IntArray &J) override;
     int buildInternalStructure(EngngModel *eModel, int di, const UnknownNumberingScheme &s) override;
     int buildInternalStructure(EngngModel *eModel, int di, const UnknownNumberingScheme &r_s, const UnknownNumberingScheme &c_s) override;

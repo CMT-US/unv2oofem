@@ -297,6 +297,58 @@ PetscSparseMtrx :: addDiagonal(double x, FloatArray &m)
     VecDestroy(& globM);
 }
 
+void
+PetscSparseMtrx :: addDiagonal(double x)
+{
+	int N = this->giveNumberOfRows();
+
+	Vec petsc_mat_diag;
+	VecCreate(PETSC_COMM_SELF, & petsc_mat_diag);
+	VecSetType(petsc_mat_diag, VECSEQ);
+	VecSetSizes(petsc_mat_diag, PETSC_DECIDE, N);
+
+	MatGetDiagonal(this->mtrx, petsc_mat_diag);
+
+
+	for(int i = 0; i < N; i++) {
+		double a = 0.0;
+		VecGetValues(petsc_mat_diag, 1, &i, &a);
+		VecSetValue(petsc_mat_diag, i, x, ADD_VALUES);
+	}
+
+	MatDiagonalSet( this->mtrx, petsc_mat_diag, INSERT_VALUES);
+
+	VecDestroy(& petsc_mat_diag);
+
+}
+
+void
+PetscSparseMtrx :: addDiagonal(double x, const IntArray &iLoc)
+{
+	int N = this->giveNumberOfRows();
+
+	Vec petsc_mat_diag;
+	VecCreate(PETSC_COMM_SELF, & petsc_mat_diag);
+	VecSetType(petsc_mat_diag, VECSEQ);
+	VecSetSizes(petsc_mat_diag, PETSC_DECIDE, N);
+
+	MatGetDiagonal(this->mtrx, petsc_mat_diag);
+
+
+	for(int j : iLoc) {
+
+		int i = j - 1;
+		double a = 0.0;
+
+		VecGetValues(petsc_mat_diag, 1, &i, &a);
+		VecSetValue(petsc_mat_diag, i, x, ADD_VALUES);
+	}
+
+	MatDiagonalSet(this->mtrx, petsc_mat_diag, INSERT_VALUES);
+
+	VecDestroy(& petsc_mat_diag);
+}
+
 int
 PetscSparseMtrx :: buildInternalStructure(EngngModel *eModel, int n, int m, const IntArray &I, const IntArray &J)
 {

@@ -389,13 +389,15 @@ if ((inputFileName == '') or (nparts == 0)):
 infile = open(inputFileName, 'r')
 
 # parse input file
+print "Parsing input..."
 parseInput (infile)
+print "done."
 
 #now create adjacency list 
 #nodecut assumed - elements graph verices, nodes represent edges
 adj = [Set() for i in range(nelem)] #emtpy adj list
 for ie in range(nelem):
-    #print "element", ie
+    print "element", ie
     #loop over element nodes (local numbering)
     for i in elemnodes[ie]:
         #print "  node", i, " connectivity ",  nodalconnectivity[i]
@@ -404,19 +406,25 @@ for ie in range(nelem):
                 adj[ie].add(k)
                 adj[k].add(ie)
 
-#print adj
+print adj
+print nparts
+
+print "Calling Metis"
 
 #done; call metis now
 try:
     from metis import part_graph
     cuts, part_vert = part_graph(adj, nparts)
 except:
-    print "metis module not installed or internal metis error encountered"
-    exit(0)
+    #print "metis module not installed or internal metis error encountered"
+    #exit(0)
+    print "Problems with part_graph..."
 
-#print "Metis"
-#print " part_vert :", part_vert
-#print " cuts:", cuts
+print "done."
+
+print "Metis"
+print " part_vert :", part_vert
+print " cuts:", cuts
 
 # write partitioned mesh on output
 print "Partition  local_nodes shared_nodes   elements"

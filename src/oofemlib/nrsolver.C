@@ -285,10 +285,10 @@ NRSolver :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
         }
 
         if ( nite > 0 || !mCalcStiffBeforeRes ) {
-//            if ( ( NR_Mode == nrsolverFullNRM ) || ( ( NR_Mode == nrsolverAccelNRM ) && ( nite % MANRMSteps == 0 ) ) ) {
+            if ( ( NR_Mode == nrsolverFullNRM ) || ( ( NR_Mode == nrsolverAccelNRM ) && ( nite % MANRMSteps == 0 ) ) ) {
                 engngModel->updateComponent(tStep, NonLinearLhs, domain);
                 applyConstraintsToStiffness(k);
-//            }
+            }
         }
 
         if ( ( nite == 0 ) && ( deltaL < 1.0 ) ) { // deltaL < 1 means no increment applied, only equilibrate current state
@@ -333,7 +333,8 @@ NRSolver :: solve(SparseMtrx &k, FloatArray &R, FloatArray *R0,
 
         if(maxInc > maxIncAllowed) {
             if ( engngModel->giveProblemScale() == macroScale ) {
-            	printf("Restricting increment. maxInc: %e\n", maxInc);
+            	double incRatio = maxIncAllowed/maxInc;
+            	printf("Restricting increment. maxInc: %e increment ratio: %e\n", maxInc, incRatio);
             }
         	ddX.times(maxIncAllowed/maxInc);
         }

@@ -84,6 +84,9 @@ protected:
 
     bool mRecomputeStepAfterPropagation;
 
+    /// Store previous increment for use as starting guess.
+    FloatArray previousIncrement;
+
 public:
     StaticStructural(int i, EngngModel *master=nullptr);
     virtual ~StaticStructural();
