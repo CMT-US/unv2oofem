@@ -52,6 +52,7 @@
 #include "sparselinsystemnm.h"
 #include "assemblercallback.h"
 #include "mathfem.h"
+#include "crosssection.h"
 
 namespace oofem {
 REGISTER_BoundaryCondition(PrescribedGradientDD);
@@ -234,6 +235,7 @@ void PrescribedGradientDD :: updateCoefficientMatrix(FloatMatrix &C)
   
 void PrescribedGradientDD :: computeField(FloatArray &sigma, TimeStep *tStep)
 {
+    double volRVE;
     EngngModel *emodel = this->domain->giveEngngModel();
     int npeq = emodel->giveNumberOfDomainEquations( this->giveDomain()->giveNumber(), EModelDefaultPrescribedEquationNumbering() );
     FloatArray R_c(npeq), R_ext(npeq);
@@ -253,7 +255,21 @@ void PrescribedGradientDD :: computeField(FloatArray &sigma, TimeStep *tStep)
     FloatMatrix C;
     this->updateCoefficientMatrix(C);
     sigma.beTProductOf(C, R_c);
-    sigma.times( 1. / (this->domainSize(this->giveDomain(), conboundset) * thick ) ); 
+
+    if ( this->giveDomain()->giveNumberOfSpatialDimensions() == 2 ) {
+        //assuming that the RVE thickness is constant (2D)
+        Element *e = this->giveDomain()->giveElement(this->giveDomain()->giveSet(conboundset)->giveBoundaryList().at(1));
+        std :: unique_ptr< IntegrationRule > ir = e->giveInterpolation()->giveIntegrationRule(e->giveInterpolation()->giveInterpolationOrder());
+        CrossSection *cs = e->giveCrossSection();
+        GaussPoint *gp = ir->getIntegrationPoint(1);
+        double thick = cs->give(CS_Thickness, gp);
+        double omegaBox = this->domainSize(this->giveDomain(), conboundset);
+        volRVE = omegaBox * thick;
+    } else {
+        volRVE = this->domainSize(this->giveDomain(), conboundset);
+    }
+
+    sigma.times( 1. / volRVE );
 }
 
 
@@ -301,7 +317,22 @@ void PrescribedGradientDD :: computeTangent(FloatMatrix &tangent, TimeStep *tSte
     Kpf->times(a, Kpfa);
     X.subtract(Kpfa);
     tangent.beTProductOf(C, X);
-    tangent.times( 1. / (this->domainSize(this->giveDomain(), this->giveSetNumber()) * thick ));
+
+    double volRVE;
+    if ( this->giveDomain()->giveNumberOfSpatialDimensions() == 2 ) {
+        //assuming that the RVE thickness is constant (2D)
+        Element *e = this->giveDomain()->giveElement(this->giveDomain()->giveSet(conboundset)->giveBoundaryList().at(1));
+        std :: unique_ptr< IntegrationRule > ir = e->giveInterpolation()->giveIntegrationRule(e->giveInterpolation()->giveInterpolationOrder());
+        CrossSection *cs = e->giveCrossSection();
+        GaussPoint *gp = ir->getIntegrationPoint(1);
+        double thick = cs->give(CS_Thickness, gp);
+        double omegaBox = this->domainSize(this->giveDomain(), conboundset);
+        volRVE = omegaBox * thick;
+    } else {
+        volRVE = this->domainSize(this->giveDomain(), conboundset);
+    }
+
+    tangent.times( 1. / volRVE );
 }
 
 
@@ -316,8 +347,6 @@ IRResultType PrescribedGradientDD :: initializeFrom(InputRecord *ir)
     
     IR_GIVE_FIELD(ir, reinfybound , _IFT_PrescribedGradientDD_ReinfYBound);
     
-    IR_GIVE_FIELD(ir, thick , _IFT_PrescribedGradientDD_Thickness);
-    
     return PrescribedGradientHomogenization :: initializeFrom(ir);
 }
 
@@ -327,7 +356,6 @@ void PrescribedGradientDD :: giveInputRecord(DynamicInputRecord &input)
     GeneralBoundaryCondition :: giveInputRecord(input);
 
     input.setField(conboundset, _IFT_PrescribedGradientDD_ConcreteBoundary);
-    input.setField(thick, _IFT_PrescribedGradientDD_Thickness);
     input.setField(reinfxbound, _IFT_PrescribedGradientDD_ReinfXBound);
     input.setField(reinfybound, _IFT_PrescribedGradientDD_ReinfYBound);
     return PrescribedGradientHomogenization :: giveInputRecord(input);

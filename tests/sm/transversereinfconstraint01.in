@@ -323,7 +323,7 @@ MazarsModel 1 d 1.0 E 3.36e10 n 0.2 version 1 e0 8.63e-5 ac 2.6 bc 800 ef 0.0025
 MisesMat 2 d 1.0 E 2e11 n 0.3 sig0 500e6 H 8.456659619e8 omega_crit 0 a 0 tAlpha 1.0
 bondceb 3 kn 6e12 ks 6.135e10 s1 0.001 s2 0.002 s3 0.0065 taumax 1.541e7 tauf 6.164e6
 bondceb 4 kn 6e12 ks 6.135e10 s1 0.001 s2 0.002 s3 0.004 taumax 1.541e7 tauf 6.164e6
-PrescribedSlipGradientsDD 1 loadTimeFunction 1 dofs 3 1 2 6 field1 2 0 0 gradient1 2 2 {0.3e-5 0.4e-5; 0.4e-5 -0.5e-5} field2 2 0.5e-4 0.3e-4 gradient2 2 2 {0 0; 0 0} set 5 conboundset 6 thick 0.2 reinfxbound 8 reinfybound 7
+PrescribedSlipGradientsDD 1 loadTimeFunction 1 dofs 3 1 2 6 field1 2 0 0 gradient1 2 2 {0.3e-5 0.4e-5; 0.4e-5 -0.5e-5} field2 2 0.5e-4 0.3e-4 gradient2 2 2 {0 0; 0 0} set 5 conboundset 6 reinfxbound 8 reinfybound 7
 TransverseReinforcementConstraint 2 loadTimeFunction 1 steelElSet 10 conElBoundSet 14
 TransverseReinforcementConstraint 3 loadTimeFunction 1 steelElSet 9 conElBoundSet 15
 ConstantFunction 1 f(t) 1.0

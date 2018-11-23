@@ -313,5 +313,5 @@ MazarsModel 1 d 1.0 E 3.36e10 n 0.2 version 1 e0 8.63e-5 ac 2.6 bc 800 ef 0.0025
 MisesMat 2 d 1.0 E 2e11 n 0.3 sig0 500e6 H 8.456659619e8 omega_crit 0 a 0 tAlpha 1.0
 bondceb 3 kn 6e12 ks 6.135e10 s1 0.001 s2 0.002 s3 0.0065 taumax 1.541e7 tauf 6.164e6
 bondceb 4 kn 6e12 ks 6.135e10 s1 0.001 s2 0.002 s3 0.004 taumax 1.541e7 tauf 6.164e6
-PrescribedGradientDN 1 loadTimeFunction 1 dofs 2 1 2 gradient 2 2 {0 0; 0 0} set 5 thick 0.2
+PrescribedGradientDN 1 loadTimeFunction 1 dofs 2 1 2 gradient 2 2 {0 0; 0 0} set 5
 ConstantFunction 1 f(t) 1.0

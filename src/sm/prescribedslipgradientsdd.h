@@ -48,7 +48,6 @@
 //@{
 #define _IFT_PrescribedSlipGradientsDD_Name "prescribedslipgradientsdd"
 #define _IFT_PrescribedSlipGradientsDD_ConcreteBoundary "conboundset"
-#define _IFT_PrescribedSlipGradientsDD_Thickness "thick"
 #define _IFT_PrescribedSlipGradientsDD_ReinfXBound "reinfxbound"
 #define _IFT_PrescribedSlipGradientsDD_ReinfYBound "reinfybound"
 
@@ -138,10 +137,6 @@ protected:
      * Element boundaries set of the concrete solid
      */
     int conboundset;
-    /**
-     * Thickness of the RVE
-     */
-    double thick;
     /**
      * Node set containing end nodes of rebars in x-dir (horizontal).
      */

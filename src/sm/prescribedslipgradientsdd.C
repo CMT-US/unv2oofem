@@ -52,6 +52,7 @@
 #include "sparselinsystemnm.h"
 #include "assemblercallback.h"
 #include "mathfem.h"
+#include "crosssection.h"
 
 namespace oofem {
 REGISTER_BoundaryCondition(PrescribedSlipGradientsDD);
@@ -269,7 +270,7 @@ void PrescribedSlipGradientsDD :: updateCoefficientMatrix(FloatMatrix &C)
 void PrescribedSlipGradientsDD :: computeStress(FloatArray &sigma, TimeStep *tStep)
 {
     //order: sxx, syy, sxy, syx
-
+    double volRVE;
     EngngModel *emodel = this->domain->giveEngngModel();
     int npeq = emodel->giveNumberOfDomainEquations( this->giveDomain()->giveNumber(), EModelDefaultPrescribedEquationNumbering() );
     FloatArray R_c(npeq), R_ext(npeq);
@@ -289,14 +290,28 @@ void PrescribedSlipGradientsDD :: computeStress(FloatArray &sigma, TimeStep *tSt
     FloatMatrix C;
     this->updateCoefficientMatrix(C);
     sigma.beTProductOf(C, R_c);
-    sigma.times( 1. / (this->domainSize(this->giveDomain(), conboundset) * thick ) );
+
+    if ( this->giveDomain()->giveNumberOfSpatialDimensions() == 2 ) {
+        //assuming that the RVE thickness is constant (2D)
+        Element *e = this->giveDomain()->giveElement(this->giveDomain()->giveSet(conboundset)->giveBoundaryList().at(1));
+        std :: unique_ptr< IntegrationRule > ir = e->giveInterpolation()->giveIntegrationRule(e->giveInterpolation()->giveInterpolationOrder());
+        CrossSection *cs = e->giveCrossSection();
+        GaussPoint *gp = ir->getIntegrationPoint(1);
+        double thick = cs->give(CS_Thickness, gp);
+        double omegaBox = this->domainSize(this->giveDomain(), conboundset);
+        volRVE = omegaBox * thick;
+    } else {
+        volRVE = this->domainSize(this->giveDomain(), conboundset);
+    }
+
+    sigma.times( 1. / volRVE );
 }
 
 void PrescribedSlipGradientsDD :: computeTransferStress(FloatArray &bStress, TimeStep *tStep)
 {
     //According to 1/(\Omega_\Box) * \sum R_L \be{l}
     // [ tau_bxx, tau_byy ]
-
+    double volRVE;
     EngngModel *emodel = this->domain->giveEngngModel();
     Domain *domain = this->giveDomain();
 
@@ -342,14 +357,27 @@ void PrescribedSlipGradientsDD :: computeTransferStress(FloatArray &bStress, Tim
         bStress.at(2) += R_L*eL.at(2);
     }
 
-    bStress.times( 1. / (this->domainSize(this->giveDomain(), conboundset) * thick ) );
+    if ( this->giveDomain()->giveNumberOfSpatialDimensions() == 2 ) {
+        //assuming that the RVE thickness is constant (2D)
+        Element *e = this->giveDomain()->giveElement(this->giveDomain()->giveSet(conboundset)->giveBoundaryList().at(1));
+        std :: unique_ptr< IntegrationRule > ir = e->giveInterpolation()->giveIntegrationRule(e->giveInterpolation()->giveInterpolationOrder());
+        CrossSection *cs = e->giveCrossSection();
+        GaussPoint *gp = ir->getIntegrationPoint(1);
+        double thick = cs->give(CS_Thickness, gp);
+        double omegaBox = this->domainSize(this->giveDomain(), conboundset);
+        volRVE = omegaBox * thick;
+    } else {
+        volRVE = this->domainSize(this->giveDomain(), conboundset);
+    }
+
+    bStress.times( 1. / volRVE );
 }
 
 void PrescribedSlipGradientsDD :: computeReinfStress(FloatArray &rStress, TimeStep *tStep)
 {
     //According to 1/(\Omega_\Box) * \sum R_L \be{l} \outerp [x - \bar{x} ]
     //order: sxx, syy, sxy, syx
-
+    double volRVE;
     EngngModel *emodel = this->domain->giveEngngModel();
     Domain *domain = this->giveDomain();
 
@@ -401,7 +429,20 @@ void PrescribedSlipGradientsDD :: computeReinfStress(FloatArray &rStress, TimeSt
         rStress.at(4) += R_L*eL.at(2) * (coords->at(1) - xbar);
     }
 
-    rStress.times( 1. / (this->domainSize(this->giveDomain(), conboundset) * thick ) );
+    if ( this->giveDomain()->giveNumberOfSpatialDimensions() == 2 ) {
+        //assuming that the RVE thickness is constant (2D)
+        Element *e = this->giveDomain()->giveElement(this->giveDomain()->giveSet(conboundset)->giveBoundaryList().at(1));
+        std :: unique_ptr< IntegrationRule > ir = e->giveInterpolation()->giveIntegrationRule(e->giveInterpolation()->giveInterpolationOrder());
+        CrossSection *cs = e->giveCrossSection();
+        GaussPoint *gp = ir->getIntegrationPoint(1);
+        double thick = cs->give(CS_Thickness, gp);
+        double omegaBox = this->domainSize(this->giveDomain(), conboundset);
+        volRVE = omegaBox * thick;
+    } else {
+        volRVE = this->domainSize(this->giveDomain(), conboundset);
+    }
+
+    rStress.times( 1. / volRVE );
 }
 
 void PrescribedSlipGradientsDD :: computeTangent(FloatMatrix &tangent, TimeStep *tStep)
@@ -421,8 +462,6 @@ IRResultType PrescribedSlipGradientsDD :: initializeFrom(InputRecord *ir)
 
     IR_GIVE_FIELD(ir, reinfybound , _IFT_PrescribedSlipGradientsDD_ReinfYBound);
 
-    IR_GIVE_FIELD(ir, thick , _IFT_PrescribedSlipGradientsDD_Thickness);
-
     return PrescribedFieldsGradientsHomogenization :: initializeFrom(ir);
 }
 
@@ -432,7 +471,6 @@ void PrescribedSlipGradientsDD :: giveInputRecord(DynamicInputRecord &input)
     GeneralBoundaryCondition :: giveInputRecord(input);
 
     input.setField(conboundset, _IFT_PrescribedSlipGradientsDD_ConcreteBoundary);
-    input.setField(thick, _IFT_PrescribedSlipGradientsDD_Thickness);
     input.setField(reinfxbound, _IFT_PrescribedSlipGradientsDD_ReinfXBound);
     input.setField(reinfybound, _IFT_PrescribedSlipGradientsDD_ReinfYBound);
     return PrescribedFieldsGradientsHomogenization :: giveInputRecord(input);

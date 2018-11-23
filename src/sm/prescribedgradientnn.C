@@ -50,6 +50,7 @@
 #include "engngm.h"
 #include "mathfem.h"
 #include "dynamicinputrecord.h"
+#include "crosssection.h"
 
 namespace oofem {
 REGISTER_BoundaryCondition(PrescribedGradientNN);
@@ -75,9 +76,7 @@ PrescribedGradientNN :: ~PrescribedGradientNN()
 
 IRResultType PrescribedGradientNN :: initializeFrom(InputRecord *ir)
 {
-    IRResultType result;
     ActiveBoundaryCondition :: initializeFrom(ir);
-    IR_GIVE_FIELD(ir, thick , _IFT_PrescribedGradientNN_Thickness);
     return PrescribedGradientHomogenization :: initializeFrom(ir);
 }
 
@@ -85,7 +84,6 @@ IRResultType PrescribedGradientNN :: initializeFrom(InputRecord *ir)
 void PrescribedGradientNN :: giveInputRecord(DynamicInputRecord &input)
 {
     ActiveBoundaryCondition :: giveInputRecord(input);
-    input.setField(thick, _IFT_PrescribedGradientNN_Thickness);
     PrescribedGradientHomogenization :: giveInputRecord(input);
 }
 
@@ -242,7 +240,17 @@ void PrescribedGradientNN :: giveLocationArrays(std :: vector< IntArray > &rows,
 void PrescribedGradientNN :: computeField(FloatArray &sigma, TimeStep *tStep)
 {
     mpSigmaHom->giveUnknownVector(sigma, mSigmaIds, VM_Total, tStep);
-    sigma.times(1/thick);
+
+    if ( this->giveDomain()->giveNumberOfSpatialDimensions() == 2 ) {
+        //assuming that the RVE thickness is constant (2D)
+        Element *e = this->giveDomain()->giveElement(this->giveDomain()->giveSet(this->giveSetNumber())->giveBoundaryList().at(1));
+        std :: unique_ptr< IntegrationRule > ir = e->giveInterpolation()->giveIntegrationRule(e->giveInterpolation()->giveInterpolationOrder());
+        CrossSection *cs = e->giveCrossSection();
+        GaussPoint *gp = ir->getIntegrationPoint(1);
+        double thick = cs->give(CS_Thickness, gp);
+
+        sigma.times(1/thick);
+    }
 }
 
 
@@ -253,7 +261,19 @@ void PrescribedGradientNN :: computeTangent(FloatMatrix &tangent, TimeStep *tSte
     std :: unique_ptr< SparseLinearSystemNM > solver( 
         classFactory.createSparseLinSolver( ST_Petsc, this->domain, this->domain->giveEngngModel() ) ); // = rve->giveLinearSolver();
     SparseMtrxType stype = solver->giveRecommendedMatrix(true);
-    double rve_size = this->domainSize(this->giveDomain(), this->giveSetNumber());
+
+    double rve_size;
+    if ( this->giveDomain()->giveNumberOfSpatialDimensions() == 2 ) {
+        //assuming that the RVE thickness is constant (2D)
+        Element *e = this->giveDomain()->giveElement(this->giveDomain()->giveSet(this->giveSetNumber())->giveBoundaryList().at(1));
+        std :: unique_ptr< IntegrationRule > ir = e->giveInterpolation()->giveIntegrationRule(e->giveInterpolation()->giveInterpolationOrder());
+        CrossSection *cs = e->giveCrossSection();
+        GaussPoint *gp = ir->getIntegrationPoint(1);
+        double thick = cs->give(CS_Thickness, gp);
+        rve_size = this->domainSize(this->giveDomain(), this->giveSetNumber()) * thick;
+    } else {
+        rve_size = this->domainSize(this->giveDomain(), this->giveSetNumber());
+    }
 
     // 1. Kuu*us = -Kus*s   =>  us = -Kuu\Ku  where u = us*s
     // 2. Ks = Kus'*us

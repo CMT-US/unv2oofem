@@ -47,7 +47,6 @@
 ///@name Input fields for PrescribedGradientDN
 //@{
 #define _IFT_PrescribedGradientDN_Name "prescribedgradientdn"
-#define _IFT_PrescribedGradientDN_Thickness "thick"
 
 //@}
 
@@ -114,12 +113,6 @@ public:
 
     const char *giveClassName() const override { return "PrescribedGradientDN"; }
     const char *giveInputRecordName() const override { return _IFT_PrescribedGradientDN_Name; }
-    
-protected:
-    /**
-     * Thickness of the RVE
-     */
-    double thick;
 };
 } // end namespace oofem
 

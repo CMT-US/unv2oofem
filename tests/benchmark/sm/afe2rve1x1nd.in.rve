@@ -314,5 +314,5 @@ bondceb 3 kn 6e12 ks 6.135e10 s1 0.001 s2 0.002 s3 0.0065 taumax 1.541e7 tauf 6.
 bondceb 4 kn 6e12 ks 6.135e10 s1 0.001 s2 0.002 s3 0.004 taumax 1.541e7 tauf 6.164e6
 PrescribedGradientSubBCs 1 subbcs 2 2 3 loadTimeFunction 1 dofs 2 1 2 gradient 2 2 {0 0; 0 0}
 PrescribedGradientNN 2 loadTimeFunction 1 dofs 2 1 2 gradient 2 2 {0 0; 0 0} set 5 thick 0.2
-PrescribedGradientDD 3 loadTimeFunction 1 dofs 3 1 2 6 gradient 2 2 {0 0; 0 0} set 6 conboundset 5 thick 0.2 reinfxbound 8 reinfybound 7
+PrescribedGradientDD 3 loadTimeFunction 1 dofs 3 1 2 6 gradient 2 2 {0 0; 0 0} set 6 conboundset 5 reinfxbound 8 reinfybound 7
 ConstantFunction 1 f(t) 1.0

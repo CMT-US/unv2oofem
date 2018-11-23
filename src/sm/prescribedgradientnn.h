@@ -97,9 +97,6 @@ protected:
 
     /// Help function that integrates the tangent contribution from a single element boundary.
     void integrateTangent(FloatMatrix &oTangent, Element *e, int iBndIndex);
-    
-    /// Thickness of the 2D RVE
-    double thick;
 };
 } /* namespace oofem */
 
