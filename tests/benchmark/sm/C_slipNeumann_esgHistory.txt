@@ -1,0 +1,4 @@
+#####ESG (strain/slip/slipGradient) history
+TimeStep 	 eps_xx 	 eps_yy 	 gamma_xy 	 s_x 	 s_y 	 g_xx 	 g_yy 	 g_xy 	 g_yx 
+1 	 0.300000e-09 	 -0.500000e-09 	 0.800000e-09 	 1.000000e-05 	 -2.000000e-05 	 0.300000e-09 	 -0.500000e-09 	 0.600000e-09 	 0.600000e-09
+
