@@ -121,6 +121,10 @@ set (sm_boundary_conditions
     prescribedfieldsgradientshomogenization.C
     prescribedslipgradientsdd.C
     transversereinfconstraint.C
+    prescribedslipbcneumann.C
+    prescribedslipgradbcneumann.C
+    prescribedfieldsgradientdirichlet.C
+    prescribedfieldsgradientssubbcs.C
     )
 
 set (sm_crosssection

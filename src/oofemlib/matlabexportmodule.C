@@ -60,6 +60,9 @@
 #include "prescribedgradientsubbcs.h"
 #include "prescribedslipgradientsdd.h"
 #include "transversereinfconstraint.h"
+#include "prescribedfieldsgradientdirichlet.h"
+#include "prescribedslipbcneumann.h"
+#include "prescribedslipgradbcneumann.h"
 #include "floatarray.h"
     
 #ifdef __FM_MODULE
@@ -493,7 +496,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
     //hack to output an empty object if no boundary conditions are of the types defined below. @todo: fix that
     fprintf(FID, "\tspecials=[];\n");
     // Output weak periodic boundary conditions
-    unsigned int wpbccount = 1, sbsfcount = 1, mcount = 1, pgbcncount=1, pgcount=1, pgddcount=1, pgdncount=1, pgnncount=1, pgsubcount=1, psgddcount=1, trccount=1;
+    unsigned int wpbccount = 1, sbsfcount = 1, mcount = 1, pgbcncount=1, pgcount=1, pgddcount=1, pgdncount=1, pgnncount=1, pgsubcount=1, psgddcount=1, trccount=1, pfgdcount=1, psbcncount=1, psgbcncount=1;
 
     for ( auto &gbc : domain->giveBcs() ) {
         WeakPeriodicBoundaryCondition *wpbc = dynamic_cast< WeakPeriodicBoundaryCondition * >( gbc.get() );
@@ -546,7 +549,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
         PrescribedGradient *pg = dynamic_cast<PrescribedGradient *> (gbc.get() );
         FloatArray stressD;
         if (pg) {
-            pg->computeField(stressD,tStep);
+            pg->computeField(stressD, tStep);
             fprintf(FID, "\tspecials.prescribedgradient{%u}.stress=[",pgcount);
             for (auto i : stressD) {
                 fprintf(FID, "%.15e\t", i);
@@ -558,7 +561,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
         PrescribedGradientDD *pgdd = dynamic_cast<PrescribedGradientDD *> (gbc.get() );
         FloatArray stressDD;
         if (pgdd) {
-            pgdd->computeField(stressDD,tStep);
+            pgdd->computeField(stressDD, tStep);
             fprintf(FID, "\tspecials.prescribedgradientDD{%u}.stress=[",pgddcount);
             for (auto i : stressDD) {
                 fprintf(FID, "%.15e\t", i);
@@ -570,7 +573,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
         PrescribedGradientDN *pgdn = dynamic_cast<PrescribedGradientDN *> (gbc.get() );
         FloatArray stressDN;
         if (pgdn) {
-            pgdn->computeField(stressDN,tStep);
+            pgdn->computeField(stressDN, tStep);
             fprintf(FID, "\tspecials.prescribedgradientDN{%u}.stress=[",pgdncount);
             for (auto i : stressDN) {
                 fprintf(FID, "%.15e\t", i);
@@ -582,7 +585,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
         PrescribedGradientNN *pgnn = dynamic_cast<PrescribedGradientNN *> (gbc.get() );
         FloatArray stressNN;
         if (pgnn) {
-            pgnn->computeField(stressNN,tStep);
+            pgnn->computeField(stressNN, tStep);
             fprintf(FID, "\tspecials.prescribedgradientNN{%u}.stress=[",pgnncount);
             for (auto i: stressNN) {
                 fprintf(FID, "%.15e\t", i);
@@ -594,7 +597,7 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
         PrescribedGradientSubBCs *pgsub = dynamic_cast<PrescribedGradientSubBCs *> (gbc.get() );
         FloatArray stressSubBCs;
         if (pgsub) {
-            pgsub->computeField(stressSubBCs,tStep);
+            pgsub->computeField(stressSubBCs, tStep);
             fprintf(FID, "\tspecials.prescribedgradientSubBCs{%u}.stress=[",pgsubcount);
             for (auto i: stressSubBCs) {
                 fprintf(FID, "%.15e\t", i);
@@ -602,19 +605,19 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
             fprintf(FID, "];\n");
             ++pgsubcount;
         }
-        //output of homogenized stress, bond stress, and reinforcement stress for PrescribedSlipGradientsDD
+        //output of homogenized stress, transfer stress, and reinforcement stress for PrescribedSlipGradientsDD
         PrescribedSlipGradientsDD *psgdd = dynamic_cast<PrescribedSlipGradientsDD *> (gbc.get() );
         FloatArray stress, bStress, rStress;
         if (psgdd) {
-            psgdd->computeStress(stress,tStep);
-            psgdd->computeTransferStress(bStress,tStep);
-            psgdd->computeReinfStress(rStress,tStep);
+            psgdd->computeStress(stress, tStep);
+            psgdd->computeTransferStress(bStress, tStep);
+            psgdd->computeReinfStress(rStress, tStep);
             fprintf(FID, "\tspecials.prescribedslipgradientsdd{%u}.stress=[",psgddcount);
             for (auto i: stress) {
                 fprintf(FID, "%.10e\t", i);
             }
             fprintf(FID,"];\n");
-            fprintf(FID, "\tspecials.prescibedslipgradientsdd{%u}.transferstress=[",psgddcount);
+            fprintf(FID, "\tspecials.prescribedslipgradientsdd{%u}.transferstress=[",psgddcount);
             for (auto i: bStress) {
                 fprintf(FID, "%.10e\t", i);
             }
@@ -630,13 +633,49 @@ MatlabExportModule :: doOutputSpecials(TimeStep *tStep,    FILE *FID)
         TransverseReinfConstraint *trc = dynamic_cast<TransverseReinfConstraint *> (gbc.get() );
         FloatArray lambda;
         if (trc) {
-            trc->computeField(lambda,tStep);
+            trc->computeField(lambda, tStep);
             fprintf(FID, "\tspecials.transversereinfconstraint{%u}.lambda=[",psgddcount);
             for (auto i: lambda) {
                 fprintf(FID, "%.10e\t", i);
             }
             fprintf(FID,"];\n");
             ++trccount;
+        }
+        //output of effective stress for PrescribedFieldsGradientDirichlet
+        PrescribedFieldsGradientDirichlet *pfgd = dynamic_cast<PrescribedFieldsGradientDirichlet *> ( gbc.get() );
+        FloatArray sigmaD;
+        if (pfgd) {
+            pfgd->computeStress(sigmaD, tStep);
+            fprintf(FID, "\tspecials.prescribedfieldsgradientdirichlet{%u}.stress=[",pfgdcount);
+            for (auto i: sigmaD) {
+                fprintf(FID, "%.10e\t", i);
+            }
+            fprintf(FID, "];\n");
+            ++pfgdcount;
+        }
+        //output of effective transfer stress for PrescribedSlipBCNeumann
+        PrescribedSlipBCNeumann *psbcn = dynamic_cast<PrescribedSlipBCNeumann *> (gbc.get() );
+        FloatArray trStressN;
+        if (psbcn) {
+            psbcn->computeTransferStress(trStressN,tStep);
+            fprintf(FID, "\tspecials.prescibedslipbcneumann{%u}.transferstress=[",psbcncount);
+            for (auto i: trStressN) {
+                fprintf(FID, "%.10e\t", i);
+            }
+            fprintf(FID,"]; \n");
+            ++psbcncount;
+        }
+        //output of effective reinforcement stress for PrescribedSlipBCNeumann
+        PrescribedSlipGradientBCNeumann *psgbcn = dynamic_cast<PrescribedSlipGradientBCNeumann *> (gbc.get() );
+        FloatArray reStressN;
+        if (psgbcn) {
+            psgbcn->computeReinfStress(reStressN,tStep);
+            fprintf(FID, "\tspecials.prescibedslipgradientbcneumann{%u}.reinfstress=[",psgbcncount);
+            for (auto i: reStressN) {
+                fprintf(FID, "%.10e\t", i);
+            }
+            fprintf(FID,"]; \n");
+            ++psgbcncount;
         }
     }
 }
