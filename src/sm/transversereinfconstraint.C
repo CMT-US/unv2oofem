@@ -145,10 +145,10 @@ void TransverseReinfConstraint :: assembleVector(FloatArray &answer, TimeStep *t
                 ec->computeBoundaryVectorOf(bndNodes, masterDofIDs, mode, tStep, u_c);
 
                 //Assemble the location and u arrays
-                loc.beCopyOf(loc_s);
+                loc=loc_s;
                 loc.followedBy(loc_c);
 
-                u.beCopyOf(u_s);
+                u=u_s;
                 u.append(u_c);
 
                 //Compute the stiffness matrix expansion
@@ -210,9 +210,9 @@ void TransverseReinfConstraint :: assemble(SparseMtrx &answer, TimeStep *tStep,
                 ec->giveBoundaryLocationArray(loc_uc_c, bndNodes, c_s, &masterDofIDs);
 
                 //Assemble the location arrays
-                loc_c.beCopyOf(loc_us_c);
+                loc_c=loc_us_c;
                 loc_c.followedBy(loc_uc_c);
-                loc_r.beCopyOf(loc_us_r);
+                loc_r=loc_us_r;
                 loc_r.followedBy(loc_uc_r);
 
                 //Compute the stiffness matrix expansion
@@ -271,9 +271,9 @@ void TransverseReinfConstraint :: giveLocationArrays(std :: vector< IntArray > &
             ec->giveBoundaryLocationArray(loc_uc_r, bndNodes, r_s, &masterDofIDs);
             ec->giveBoundaryLocationArray(loc_uc_c, bndNodes, c_s, &masterDofIDs);
 
-            loc_c.beCopyOf(loc_us_c);
+            loc_c=loc_us_c;
             loc_c.followedBy(loc_uc_c);
-            loc_r.beCopyOf(loc_us_r);
+            loc_r=loc_us_r;
             loc_r.followedBy(loc_uc_r);
 
             // For most uses, loc_us_r == loc_us_c, and lambda_loc_r == lambda_loc_c.
