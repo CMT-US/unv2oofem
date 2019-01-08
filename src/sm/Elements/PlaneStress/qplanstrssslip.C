@@ -32,15 +32,14 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "../sm/Elements/PlaneStress/qtrplstrslip.h"
-#include "fei2dtrquad.h"
-#include "node.h"
+#include "sm/Elements/PlaneStress/qplanstrssslip.h"
+#include "fei2dquadquad.h"
+#include "crosssection.h"
 #include "gausspoint.h"
+#include "gaussintegrationrule.h"
 #include "floatmatrix.h"
 #include "floatarray.h"
 #include "intarray.h"
-#include "crosssection.h"
-#include "gaussintegrationrule.h"
 #include "mathfem.h"
 #include "classfactory.h"
 #include "Materials/structuralmaterial.h"
@@ -50,63 +49,44 @@
 
 #ifdef __OOFEG
  #include "oofeggraphiccontext.h"
- #include "oofegutils.h"
- #include "Materials/rcm2.h"
 #endif
 
 namespace oofem {
-REGISTER_Element(QTrPlaneStress2dSlip);
+REGISTER_Element(QPlaneStress2dSlip);
 
-FEI2dTrQuad QTrPlaneStress2dSlip :: interpolation(1, 2);
+FEI2dQuadQuad QPlaneStress2dSlip :: interpolation(1, 2);
 
-QTrPlaneStress2dSlip :: QTrPlaneStress2dSlip(int n, Domain *aDomain) :
-    PlaneStressElement(n, aDomain), SpatialLocalizerInterface(this)
+QPlaneStress2dSlip :: QPlaneStress2dSlip(int n, Domain *aDomain) :
+    PlaneStressElement(n, aDomain), ZZNodalRecoveryModelInterface(this), NodalAveragingRecoveryModelInterface()
+    // Constructor.
 {
-    numberOfDofMans  = 6;
+    numberOfDofMans  = 8;
     numberOfGaussPoints = 4;
 }
 
-
-FEInterpolation *QTrPlaneStress2dSlip :: giveInterpolation() const { return & interpolation; }
-
-
-Interface *
-QTrPlaneStress2dSlip :: giveInterface(InterfaceType interface)
-{
-    /*
-     * Note ZZNodalRecoveryModelInterface disabled, as the
-     * sum of row entries is zero for (N^T)N matrix for vertices,
-     * yielding zero entries in lumped form.
-     *
-     * if ( interface == ZZNodalRecoveryModelInterfaceType ) {
-     *    return static_cast< ZZNodalRecoveryModelInterface * >( this );
-     */
-    if ( interface == SPRNodalRecoveryModelInterfaceType ) {
-        return static_cast< SPRNodalRecoveryModelInterface * >(this);
-    } else if ( interface == SpatialLocalizerInterfaceType ) {
-        return static_cast< SpatialLocalizerInterface * >(this);
-    }
-
-    return NULL;
-}
-
-
-IRResultType
-QTrPlaneStress2dSlip :: initializeFrom(InputRecord *ir)
-{
-    numberOfGaussPoints = 4;
-    return PlaneStressElement :: initializeFrom(ir);
-}
-
-void
-QTrPlaneStress2dSlip :: giveDofManDofIDMask(int inode, IntArray &answer) const
+void QPlaneStress2dSlip :: giveDofManDofIDMask(int inode, IntArray &answer) const
 {
     answer = {
         D_u, D_v, S_u, S_v
     };
 }
 
-void QTrPlaneStress2dSlip :: computeStiffnessMatrix(FloatMatrix &answer, MatResponseMode rMode, TimeStep *tStep)
+Interface *
+QPlaneStress2dSlip :: giveInterface(InterfaceType interface)
+{
+    if ( interface == ZZNodalRecoveryModelInterfaceType ) {
+        return static_cast< ZZNodalRecoveryModelInterface * >(this);
+    } else if ( interface == NodalAveragingRecoveryModelInterfaceType ) {
+        return static_cast< NodalAveragingRecoveryModelInterface * >(this);
+    }
+
+    return NULL;
+}
+
+FEInterpolation *QPlaneStress2dSlip :: giveInterpolation() const { return & interpolation; }
+
+
+void QPlaneStress2dSlip :: computeStiffnessMatrix(FloatMatrix &answer, MatResponseMode rMode, TimeStep *tStep)
 {
     int ndof=this->computeNumberOfDofs();
 
@@ -169,8 +149,8 @@ void QTrPlaneStress2dSlip :: computeStiffnessMatrix(FloatMatrix &answer, MatResp
     }
 
     //there's probably a cleaner way to split these fields
-    IntArray aMask = {1,2,5,6,9,10,13,14,17,18,21,22};
-    IntArray bMask = {3,4,7,8,11,12,15,16,19,20,23,24};
+    IntArray aMask = {1,2,5,6,9,10,13,14,17,18,21,22,25,26,29,30};
+    IntArray bMask = {3,4,7,8,11,12,15,16,19,20,23,24,27,28,31,32};
 
     answer.resize(ndof,ndof);
     answer.assemble(Kaa,aMask,aMask);
@@ -179,7 +159,7 @@ void QTrPlaneStress2dSlip :: computeStiffnessMatrix(FloatMatrix &answer, MatResp
     answer.assemble(Kba,bMask,aMask);
 }
 
-void QTrPlaneStress2dSlip :: giveInternalForcesVector(FloatArray &answer, TimeStep *tStep, int useUpdatedGpRecord)
+void QPlaneStress2dSlip :: giveInternalForcesVector(FloatArray &answer, TimeStep *tStep, int useUpdatedGpRecord)
 {
     int ndof=this->computeNumberOfDofs();
 
@@ -187,8 +167,8 @@ void QTrPlaneStress2dSlip :: giveInternalForcesVector(FloatArray &answer, TimeSt
     FloatArray u, a, b;
     this->computeVectorOf(VM_Total, tStep, u);
     //Split into displacement and slip fields;
-    IntArray aMask = {1,2,5,6,9,10,13,14,17,18,21,22};
-    IntArray bMask = {3,4,7,8,11,12,15,16,19,20,23,24};
+    IntArray aMask = {1,2,5,6,9,10,13,14,17,18,21,22,25,26,29,30};
+    IntArray bMask = {3,4,7,8,11,12,15,16,19,20,23,24,27,28,31,32};
     a.beSubArrayOf(u,aMask);
     b.beSubArrayOf(u,bMask);
 
@@ -226,11 +206,9 @@ void QTrPlaneStress2dSlip :: giveInternalForcesVector(FloatArray &answer, TimeSt
             answer.at(2*i) = fintb.at(i);
         }
     }
-
 }
 
-
-void QTrPlaneStress2dSlip :: computeHomogenizedFields(FloatArray &Stress, FloatArray &bStress, FloatArray &rStress, const FloatArray &strain, const FloatArray &slip, const FloatArray &slipGradient, GaussPoint *gp, TimeStep *tStep)
+void QPlaneStress2dSlip :: computeHomogenizedFields(FloatArray &Stress, FloatArray &bStress, FloatArray &rStress, const FloatArray &strain, const FloatArray &slip, const FloatArray &slipGradient, GaussPoint *gp, TimeStep *tStep)
 {
     //Homogenize stress, transfer stress and reinforcement stress from the RVE
     StructuralFE2MaterialPlaneStress *mat = dynamic_cast<StructuralFE2MaterialPlaneStress *>( this->giveStructuralCrossSection()->giveMaterial(gp) );
@@ -239,60 +217,66 @@ void QTrPlaneStress2dSlip :: computeHomogenizedFields(FloatArray &Stress, FloatA
     } else {
         OOFEM_ERROR("Check material, this element works only with StructuralFE2MaterialPlaneStress");
     }
-
 }
 
 void
-QTrPlaneStress2dSlip :: SPRNodalRecoveryMI_giveSPRAssemblyPoints(IntArray &pap)
+QPlaneStress2dSlip :: NodalAveragingRecoveryMI_computeNodalValue(FloatArray &answer, int node,
+                                                             InternalStateType type, TimeStep *tStep)
 {
-    pap.resize(3);
-    pap.at(1) = this->giveNode(1)->giveNumber();
-    pap.at(2) = this->giveNode(2)->giveNumber();
-    pap.at(3) = this->giveNode(3)->giveNumber();
-}
+    if ( numberOfGaussPoints != 4 ) {
+        return;
+    }
 
+    GaussPoint *gp;
 
-void
-QTrPlaneStress2dSlip :: SPRNodalRecoveryMI_giveDofMansDeterminedByPatch(IntArray &answer, int pap)
-{
-    answer.resize(3);
-    if ( pap == this->giveNode(1)->giveNumber() ) {
-        answer.at(1) = pap;
-        answer.at(2) = this->giveNode(4)->giveNumber();
-        answer.at(3) = this->giveNode(6)->giveNumber();
-    } else if ( pap == this->giveNode(2)->giveNumber() ) {
-        answer.at(1) = pap;
-        answer.at(2) = this->giveNode(5)->giveNumber();
-        answer.at(3) = this->giveNode(4)->giveNumber();
-    } else if ( pap == this->giveNode(3)->giveNumber() ) {
-        answer.at(1) = pap;
-        answer.at(2) = this->giveNode(6)->giveNumber();
-        answer.at(3) = this->giveNode(5)->giveNumber();
+    if ( node < 5 ) {
+        int i = 0;
+        switch ( node ) {
+        case 1: i = 4;
+            break;
+        case 2: i = 2;
+            break;
+        case 3: i = 1;
+            break;
+        case 4: i = 3;
+            break;
+        }
+
+        gp = integrationRulesArray [ 0 ]->getIntegrationPoint(i - 1);
+        this->giveIPValue(answer, gp, type, tStep);
     } else {
-        OOFEM_ERROR("node unknown");
+        int i1 = 0, i2 = 0;
+        switch ( node ) {
+        case 5: i1 = 4;
+            i2 = 2;
+            break;
+        case 6: i1 = 2;
+            i2 = 1;
+            break;
+        case 7: i1 = 1;
+            i2 = 3;
+            break;
+        case 8: i1 = 3;
+            i2 = 4;
+            break;
+        }
+
+        FloatArray contrib;
+        gp = integrationRulesArray [ 0 ]->getIntegrationPoint(i1 - 1);
+        this->giveIPValue(contrib, gp, type, tStep);
+        gp = integrationRulesArray [ 0 ]->getIntegrationPoint(i2 - 1);
+        this->giveIPValue(answer, gp, type, tStep);
+        answer.add(contrib);
+        answer.times(0.5);
     }
 }
 
-
-int
-QTrPlaneStress2dSlip :: SPRNodalRecoveryMI_giveNumberOfIP()
-{
-    return numberOfGaussPoints;
-}
-
-
-SPRPatchType
-QTrPlaneStress2dSlip :: SPRNodalRecoveryMI_givePatchType()
-{
-    return SPRPatchType_2dquadratic;
-}
-
-int QTrPlaneStress2dSlip :: giveIPValue(FloatArray &answer, GaussPoint *gp, InternalStateType type, TimeStep *tStep)
+int QPlaneStress2dSlip :: giveIPValue(FloatArray &answer, GaussPoint *gp, InternalStateType type, TimeStep *tStep)
 {
     if ( type == IST_DisplacementVector ) {
         FloatArray u, a;
         FloatMatrix N;
-        IntArray aMask = {1,2,5,6,9,10,13,14,17,18,21,22};
+        IntArray aMask = {1,2,5,6,9,10,13,14,17,18,21,22,25,26,29,30};
         this->computeVectorOf(VM_Total, tStep, u);
         a.beSubArrayOf(u, aMask);
         this->computeNmatrixAt(gp->giveSubPatchCoordinates(), N);
@@ -301,7 +285,7 @@ int QTrPlaneStress2dSlip :: giveIPValue(FloatArray &answer, GaussPoint *gp, Inte
     } else if ( type == IST_ShearSlip ) {
         FloatArray u, b;
         FloatMatrix N;
-        IntArray bMask = {3,4,7,8,11,12,15,16,19,20,23,24};
+        IntArray bMask = {3,4,7,8,11,12,15,16,19,20,23,24,27,28,31,32};
         this->computeVectorOf(VM_Total, tStep, u);
         b.beSubArrayOf(u,bMask);
         this->computeNmatrixAt(gp->giveSubPatchCoordinates(), N);
@@ -314,7 +298,7 @@ int QTrPlaneStress2dSlip :: giveIPValue(FloatArray &answer, GaussPoint *gp, Inte
     } else if ( type == IST_ShearSlipGradient ) {
         FloatArray u, b;
         FloatMatrix B;
-        IntArray bMask = {3,4,7,8,11,12,15,16,19,20,23,24};
+        IntArray bMask = {3,4,7,8,11,12,15,16,19,20,23,24,27,28,31,32};
         this->computeVectorOf(VM_Total, tStep, u);
         b.beSubArrayOf(u,bMask);
         this->computeBHmatrixAt(gp, B);
@@ -328,5 +312,6 @@ int QTrPlaneStress2dSlip :: giveIPValue(FloatArray &answer, GaussPoint *gp, Inte
         return Element :: giveIPValue(answer, gp, type, tStep);
     }
 }
+
 
 } // end namespace oofem

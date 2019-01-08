@@ -1,4 +1,5 @@
 /*
+protected:
  *
  *                 #####    #####   ######  ######  ###   ###
  *               ##   ##  ##   ##  ##      ##      ## ### ##
@@ -32,60 +33,50 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef qtrplstrdlip_h
-#define qtrplstrslip_h
+#ifndef qplanstrssslip_h
+#define qplanstrssslip_h
 
-#include "Elements/structural2delement.h"
-#include "ErrorEstimators/directerrorindicatorrc.h"
-#include "spatiallocalizer.h"
+#include "sm/Elements/structural2delement.h"
 #include "zznodalrecoverymodel.h"
-#include "sprnodalrecoverymodel.h"
+#include "nodalaveragingrecoverymodel.h"
 
-#define _IFT_QTrPlaneStress2dSlip_Name "qtrplstrslip"
+#define _IFT_QPlaneStress2dSlip_Name "qplanestress2dslip"
 
 namespace oofem {
-class FEI2dTrQuad;
+class FEI2dQuadQuad;
 
 /**
- * This class implements a quadratic triangular 6-node plane-
+ * This class implements an Quadratic isoparametric 8-node quadrilateral plane-
  * stress elasticity finite element with independent slip field. Each node has 4 degrees of freedom.
  * Works only in FE2 setting, with structuralfe2materialplanestress.
  */
-class QTrPlaneStress2dSlip : public PlaneStressElement, public SpatialLocalizerInterface,
-public SPRNodalRecoveryModelInterface
+class QPlaneStress2dSlip : public PlaneStressElement, public ZZNodalRecoveryModelInterface, public NodalAveragingRecoveryModelInterface
 {
 protected:
-    static FEI2dTrQuad interpolation;
+    static FEI2dQuadQuad interpolation;
 
 public:
-    QTrPlaneStress2dSlip(int n, Domain * d);
-    virtual ~QTrPlaneStress2dSlip() { }
+    QPlaneStress2dSlip(int n, Domain * d);
+    virtual ~QPlaneStress2dSlip() { }
 
-    Interface *giveInterface(InterfaceType it) override;
     FEInterpolation *giveInterpolation() const override;
-    double giveParentElSize() const override { return 0.5; }
 
     void computeStiffnessMatrix(FloatMatrix &answer, MatResponseMode rMode, TimeStep *tStep) override;
     void giveInternalForcesVector(FloatArray &answer, TimeStep *tStep, int useUpdatedGpRecord = 0) override;
-
     void computeHomogenizedFields(FloatArray &Stress, FloatArray &bStress, FloatArray &rStress, const FloatArray &strain, const FloatArray &slip, const FloatArray &slipGradient, GaussPoint *gp, TimeStep *tStep);
 
     // definition & identification
-    const char *giveInputRecordName() const override { return _IFT_QTrPlaneStress2dSlip_Name; }
-    const char *giveClassName() const override { return "QTrPlaneStress2dSlip"; }
-    IRResultType initializeFrom(InputRecord *ir) override;
+    const char *giveInputRecordName() const override { return _IFT_QPlaneStress2dSlip_Name; }
+    const char *giveClassName() const override { return "QPlaneStress2dSlip"; }
     void giveDofManDofIDMask(int inode, IntArray &answer) const override;
 
-    void SPRNodalRecoveryMI_giveSPRAssemblyPoints(IntArray &pap) override;
-    void SPRNodalRecoveryMI_giveDofMansDeterminedByPatch(IntArray &answer, int pap) override;
-    int SPRNodalRecoveryMI_giveNumberOfIP() override;
-    SPRPatchType SPRNodalRecoveryMI_givePatchType() override;
+    Interface *giveInterface(InterfaceType it) override;
+
+    void NodalAveragingRecoveryMI_computeNodalValue(FloatArray &answer, int node,
+                                                    InternalStateType type, TimeStep *tStep) override;
 
     int giveIPValue(FloatArray &answer, GaussPoint *gp, InternalStateType type, TimeStep *tStep) override;
 
-protected:
-    int giveNumberOfIPForMassMtrxIntegration() override { return 4; }
-
 };
 } // end namespace oofem
-#endif // qtrplstrslip_h
+#endif // qplanstrssslip_h
