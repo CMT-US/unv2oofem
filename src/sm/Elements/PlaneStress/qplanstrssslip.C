@@ -223,51 +223,78 @@ void
 QPlaneStress2dSlip :: NodalAveragingRecoveryMI_computeNodalValue(FloatArray &answer, int node,
                                                              InternalStateType type, TimeStep *tStep)
 {
-    if ( numberOfGaussPoints != 4 ) {
-        return;
-    }
+    if ( numberOfGaussPoints == 4 ) {
 
-    GaussPoint *gp;
+        GaussPoint *gp;
 
-    if ( node < 5 ) {
-        int i = 0;
+        if ( node < 5 ) {
+            int i = 0;
+            switch ( node ) {
+            case 1: i = 4;
+                break;
+            case 2: i = 2;
+                break;
+            case 3: i = 1;
+                break;
+            case 4: i = 3;
+                break;
+            }
+
+            gp = integrationRulesArray [ 0 ]->getIntegrationPoint(i - 1);
+            this->giveIPValue(answer, gp, type, tStep);
+        } else {
+            int i1 = 0, i2 = 0;
+            switch ( node ) {
+            case 5: i1 = 4;
+                i2 = 2;
+                break;
+            case 6: i1 = 2;
+                i2 = 1;
+                break;
+            case 7: i1 = 1;
+                i2 = 3;
+                break;
+            case 8: i1 = 3;
+                i2 = 4;
+                break;
+            }
+
+            FloatArray contrib;
+            gp = integrationRulesArray [ 0 ]->getIntegrationPoint(i1 - 1);
+            this->giveIPValue(contrib, gp, type, tStep);
+            gp = integrationRulesArray [ 0 ]->getIntegrationPoint(i2 - 1);
+            this->giveIPValue(answer, gp, type, tStep);
+            answer.add(contrib);
+            answer.times(0.5);
+        }
+    } else if ( numberOfGaussPoints == 9 ) {
+
+        GaussPoint *gp;
+
+        int i=0;
         switch ( node ) {
-        case 1: i = 4;
+        case 1: i = 9;
             break;
-        case 2: i = 2;
+        case 2: i = 3;
             break;
         case 3: i = 1;
             break;
-        case 4: i = 3;
+        case 4: i = 7;
+            break;
+        case 5: i = 6;
+            break;
+        case 6: i = 2;
+            break;
+        case 7: i = 4;
+            break;
+        case 8: i = 8;
             break;
         }
 
         gp = integrationRulesArray [ 0 ]->getIntegrationPoint(i - 1);
         this->giveIPValue(answer, gp, type, tStep);
     } else {
-        int i1 = 0, i2 = 0;
-        switch ( node ) {
-        case 5: i1 = 4;
-            i2 = 2;
-            break;
-        case 6: i1 = 2;
-            i2 = 1;
-            break;
-        case 7: i1 = 1;
-            i2 = 3;
-            break;
-        case 8: i1 = 3;
-            i2 = 4;
-            break;
-        }
-
-        FloatArray contrib;
-        gp = integrationRulesArray [ 0 ]->getIntegrationPoint(i1 - 1);
-        this->giveIPValue(contrib, gp, type, tStep);
-        gp = integrationRulesArray [ 0 ]->getIntegrationPoint(i2 - 1);
-        this->giveIPValue(answer, gp, type, tStep);
-        answer.add(contrib);
-        answer.times(0.5);
+        return;
     }
 }
 
