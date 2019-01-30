@@ -611,7 +611,7 @@ StructuralFE2MaterialPlaneStressStatus :: createRVE(int n, int j, const std :: s
     this->rve->init();
 
     std :: ostringstream name;
-    name << this->rve->giveOutputBaseFileName() << "-el" << n << "-gp" << j;
+    name << this->rve->giveOutputBaseFileName() << "_el" << n << "_gp" << j;
     if ( rank >= 0 ) {
         name << "." << rank;
     }
