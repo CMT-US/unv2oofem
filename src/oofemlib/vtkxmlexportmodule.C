@@ -726,7 +726,7 @@ VTKXMLExportModule :: setupVTKPiece(VTKPiece &vtkPiece, TimeStep *tStep, int reg
                 continue;
             }
 
-            regionElInd.followedBy(ei);
+            regionElInd.followedBy(elNum);
 
             cellNum++;
 

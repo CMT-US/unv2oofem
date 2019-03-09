@@ -158,7 +158,7 @@ double HydratingConcreteMat :: giveIsotropicConductivity(GaussPoint *gp, TimeSte
     if ( conductivityType == 0 ) { //given from input file
         conduct = IsotropicHeatTransferMaterial :: give('k', gp, tStep);
     } else if ( conductivityType == 1 ) { //compute according to Ruiz, Schindler, Rasmussen. Kim, Chang: Concrete temperature modeling and strength prediction using maturity concepts in the FHWA HIPERPAV software, 7th international conference on concrete pavements, Orlando (FL), USA, 2001
-        conduct = IsotropicHeatTransferMaterial :: give('k', gp, tStep) * ( 1.0 - 0.33 / 1.33 * ms->giveDoHActual() );
+        conduct = IsotropicHeatTransferMaterial :: give('k', gp, tStep) * ( 1.33 - 0.33* ms->giveDoHActual() );
     } else {
         OOFEM_ERROR("Unknown conductivityType %d\n", conductivityType);
         conduct = 0.;
@@ -235,6 +235,11 @@ HydratingConcreteMat :: giveIPValue(FloatArray &answer, GaussPoint *gp, Internal
         answer.at(1) = status->giveDoHActual();
         //else answer.at(1) = 0;
         return 1;
+    } else if (type == IST_EquivalentTime) {
+        HydratingConcreteMatStatus *status = static_cast< HydratingConcreteMatStatus * >( this->giveStatus(gp) );
+        answer.resize(1);
+        answer.at(1) = status->equivalentTime;
+        return 1;
     } else {
         return TransportMaterial :: giveIPValue(answer, gp, type, tStep);
     }
@@ -289,8 +294,9 @@ double HydratingConcreteMat :: GivePower(TimeStep *tStep, GaussPoint *gp, ValueM
         return ms->power;
     }
 
+    ms->equivalentTime = ms->lastEquivalentTime + ( evalTime - ms->lastEvalTime ) * scaleTemperature(gp);
+    
     if ( this->hydrationModelType == 1 ) { //exponential affinity hydration model, need to keep equivalent time
-        ms->equivalentTime = ms->lastEquivalentTime + ( evalTime - ms->lastEvalTime ) * scaleTemperature(gp);
         if ( ms->equivalentTime != 0. ) {
             ms->degreeOfHydration = this->DoHInf * exp( -pow(this->tau / ms->equivalentTime, this->beta) );
             //printf("%f %f %f %f\n", equivalentTime, this->lastEquivalentTime, evalTime, lastEvalTime);
@@ -381,7 +387,7 @@ HydratingConcreteMatStatus :: printOutputAt(FILE *file, TimeStep *tStep)
     HydratingConcreteMat *mat = static_cast< HydratingConcreteMat * >( this->gp->giveMaterial() );
     TransportMaterialStatus :: printOutputAt(file, tStep);
     fprintf(file, "   status {");
-    fprintf( file, "EvaluatingTime %e  DoH %f HeatPower %f [W/m3 of concrete] Temperature %f conductivity %f  capacity %f  density %f", tStep->giveIntrinsicTime(), this->giveDoHActual(), this->power, this->giveTempField().at(1), mat->giveIsotropicConductivity(this->gp, tStep), mat->giveConcreteCapacity(this->gp, tStep), mat->giveConcreteDensity(this->gp, tStep) );
+    fprintf( file, "EvaluatingTime %e DoH %f HeatPower %f [W/m3 of concrete] Temperature %f conductivity %f capacity %f density %f equivalentTime %f", tStep->giveIntrinsicTime(), this->giveDoHActual(), this->power, this->giveTempField().at(1), mat->giveIsotropicConductivity(this->gp, tStep), mat->giveConcreteCapacity(this->gp, tStep), mat->giveConcreteDensity(this->gp, tStep), this->equivalentTime );
     fprintf(file, "}\n");
 }
 } // end namespace oofem

@@ -11,6 +11,8 @@
 #              some datasets from UNV file and store them in a FEM object structure
 # To Do:   add UNV data handler functions for other datasets (to be defined)
 #          add your own code to write the model into your own file format
+# For documentation see http://sdrl.uc.edu/sdrl/referenceinfo/universalfileformats/file-format-storehouse/universal-file-datasets-summary
+
 import os
 import os.path
 import sys
@@ -56,7 +58,7 @@ class UNVParser:
         #oofem_elemProp.append(oofem_elementProperties("TrPlaneStress2D", [0,2,1], [[0,2],[2,1],[1,0]],[])) #checked - current numbering of triangle nodes is anti-clockwise, the same orientation as in OOFEM.
         oofem_elemProp.append(oofem_elementProperties("TrPlaneStress2D", [0,1,2], [[0,1],[1,2],[2,0]],[])) #old version of UNV export in SALOME, nodes on triangular elements are numbered clockwise
         oofem_elemProp.append(oofem_elementProperties("TrPlaneStress2DXFEM", oofem_elemProp[-1]))
-        oofem_elemProp.append(oofem_elementProperties("TrplaneStrain",oofem_elemProp[-1]))
+        oofem_elemProp.append(oofem_elementProperties("TrPlaneStrain",oofem_elemProp[-1]))
         oofem_elemProp.append(oofem_elementProperties("Axisymm3D",oofem_elemProp[-1]))
         oofem_elemProp.append(oofem_elementProperties("Tr1ht",oofem_elemProp[-1]))
         oofem_elemProp.append(oofem_elementProperties("Tr1hmt",oofem_elemProp[-1]))
@@ -66,6 +68,7 @@ class UNVParser:
         oofem_elemProp.append(oofem_elementProperties("CCTplate",oofem_elemProp[-1]))
         oofem_elemProp.append(oofem_elementProperties("CCTplate3D",oofem_elemProp[-1]))
         oofem_elemProp.append(oofem_elementProperties("QTrPlStr", [2,0,4,1,5,3], [[2,1,0],[0,5,4],[4,3,2]],[]))#checked
+        oofem_elemProp.append(oofem_elementProperties("Tria2PlateSubSoil", oofem_elemProp[-1]))
         oofem_elemProp.append(oofem_elementProperties("PlaneStress2D", [0,1,2,3], [[0,1],[1,2],[2,3],[3,0]],[]))#checked
         oofem_elemProp.append(oofem_elementProperties("PlaneStress2DXFEM", [0,1,2,3], [[0,1],[1,2],[2,3],[3,0]],[]))#checked
         oofem_elemProp.append(oofem_elementProperties("Quad1PlaneStrain", oofem_elemProp[-1]))
