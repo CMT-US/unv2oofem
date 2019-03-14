@@ -406,7 +406,7 @@ void PrescribedSlipBCNeumann :: computeWeightMatrix(FloatMatrix& C, const IntArr
 
 double PrescribedSlipBCNeumann :: computeInterfaceLength(const IntArray reinfSets)
 {
-    double gamma = 1.;
+    double gamma = 0.;
     for ( int i=0; i < reinfSets.giveSize(); ++i ) {
         Set *set = this->giveDomain()->giveSet(reinfSets.at(i+1));
         for ( int j=0; j < set->giveElementList().giveSize(); ++j ) {
