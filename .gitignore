@@ -19,6 +19,7 @@ t3d.bmf*
 perf.data*
 *.orig
 *.out-gp*
+*.vtk
 
 # documentation aux-files.
 *.aux
