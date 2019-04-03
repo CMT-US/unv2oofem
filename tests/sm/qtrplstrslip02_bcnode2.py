@@ -18,7 +18,7 @@ import numpy as np
 import re
 def giveUserDefBC(iCoords, iDofNum, iTime):
     #Read the strain history from the txt file produced by Matlab/Octave
-    fil=open('C_slipNeumann_esgHistory.txt')
+    fil=open('qtrplstrslip02_esgHistory.txt')
     inpFile=fil.readlines()
     fil.close
 
@@ -54,13 +54,13 @@ def giveUserDefBC(iCoords, iDofNum, iTime):
     slipGradient = [ [slipGradHist[iTime-1][1], slipGradHist[iTime-1][3]], [slipGradHist[iTime-1][4] , slipGradHist[iTime-1][2] ] ]
 
     if iDofNum == 1:
-        presVal = 0
+        presVal = 3*strain[0][0]
     elif iDofNum == 2:
-        presVal = 3*(2*strain[0][1]) + 3*strain[0][0] + 3*strain[1][1]
+        presVal = 3*(2*strain[0][1]) + 3*strain[0][0]
     elif iDofNum == 31:
-        presVal = slipGradient[0][0] + 2*slipGradient[0][1] - 3*slip[0]
+        presVal = slipGradient[0][0] - slipGradient[0][1] - 3*slip[0]
     elif iDofNum == 32:
-        presVal = slipGradient[1][0] + 2*slipGradient[1][1] - 3*slip[1]
+        presVal = slipGradient[1][0] - slipGradient[1][1] - 3*slip[1]
     else:
         print('Warning: no rule for dof number: ', iDofNum)
 

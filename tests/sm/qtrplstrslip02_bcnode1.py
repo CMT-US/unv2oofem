@@ -18,7 +18,7 @@ import numpy as np
 import re
 def giveUserDefBC(iCoords, iDofNum, iTime):
     #Read the strain history from the txt file produced by Matlab/Octave
-    fil=open('C_slipNeumann_esgHistory.txt')
+    fil=open('qtrplstrslip02_esgHistory.txt')
     inpFile=fil.readlines()
     fil.close
 

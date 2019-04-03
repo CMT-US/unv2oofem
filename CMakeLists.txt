@@ -777,7 +777,7 @@ endif()
 if (USE_SM)
     file (GLOB sm_benchmark RELATIVE "${oofem_BENCHMARK_DIR}/sm" "${oofem_BENCHMARK_DIR}/sm/*.in")
     foreach (case ${sm_benchmark})
-        add_test (NAME "benchmark_sm_${case}" WORKING_DIRECTORY ${oofem_BENCHMARK_DIR}/sm COMMAND ${oofem_cmd} "-f" ${case})
+        add_test (NAME "benchmark_sm_${case}" WORKING_DIRECTORY ${oofem_BENCHMARK_DIR}/sm COMMAND ${oofem_cmd} -ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps -f ${case})
     endforeach (case)
 endif()
 

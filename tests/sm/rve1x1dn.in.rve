@@ -1,6 +1,6 @@
 RVE11dnbc.out
 1x1 RVE - nonlinear structural analysis of the RVE - Dirichlet-Neumann BC
-StaticStructural nsteps 1 deltat 1.0 constrainednrminiter 5 rtolf 1.0e-2 MaxIter 50 minIter 1 stiffmode 2 initialguess 1 nmodules 0 lstype 3 smtype 7 suppress_output
+StaticStructural nsteps 1 deltat 1.0 constrainednrminiter 5 rtolf 1.0e-6 MaxIter 50 minIter 1 stiffmode 0 initialguess 1 nmodules 0 suppress_output
 domain 2dplanestress
 OutputManager
 ndofman 143 nelem 140 ncrosssect 8 nmat 4 nbc 4 nic 0 nltf 1 nset 13
