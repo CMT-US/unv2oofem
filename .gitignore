@@ -20,6 +20,7 @@ perf.data*
 *.orig
 *.out-gp*
 *.vtk
+*_out.*
 
 # documentation aux-files.
 *.aux
