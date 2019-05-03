@@ -76,18 +76,20 @@ IsotropicGradientDamageMaterial :: initializeFrom(InputRecord *ir)
         return result;
     }
 
-    int internalLengthDependence = 0;
-    IR_GIVE_OPTIONAL_FIELD(ir, internalLengthDependence, _IFT_IsotropicGradientDamageMaterial_internalLengthDependence);
-    if ( internalLengthDependence == 0 ) {
-        this->internalLengthDependenceType = ILD_None;
-    } else if ( internalLengthDependence == 1 ) {
-        this->internalLengthDependenceType =  ILD_Damage_DecreasingInteractions;
+    int formulationType = 0;
+    IR_GIVE_OPTIONAL_FIELD(ir, formulationType, _IFT_IsotropicGradientDamageMaterial_formulationType);
+    if ( formulationType == 0 ) {
+        this->gradientDamageFormulationType = GDFT_Standard;
+    } else if ( formulationType == 1 ) {
+        this->gradientDamageFormulationType =   GDFT_DecreasingInteractions;
         di_rho = 0.005;
         di_eta = 5;
         IR_GIVE_OPTIONAL_FIELD(ir, di_rho, _IFT_IsotropicGradientDamageMaterial_di_rho);
         IR_GIVE_OPTIONAL_FIELD(ir, di_eta, _IFT_IsotropicGradientDamageMaterial_di_eta);
+    } else if ( formulationType == 2 ) {
+        this->gradientDamageFormulationType =   GDFT_Eikonal;
     } else {
-        OOFEM_WARNING("Unknown internalLenghtDependence %d", internalLengthDependence);
+        OOFEM_WARNING("Unknown gradient damage formulation %d", formulationType);
         return IRRT_BAD_FORMAT;
     }
 
@@ -170,11 +172,20 @@ IsotropicGradientDamageMaterial :: giveGradientDamageStiffnessMatrix_du(FloatMat
 {
     IsotropicGradientDamageMaterialStatus *status = static_cast< IsotropicGradientDamageMaterialStatus * >( this->giveStatus(gp) );
 
-    FloatArray eta;
+    FloatArray eta, reducedStrain;
     FloatArray totalStrain = status->giveTempStrainVector();
-    this->computeEta(eta, totalStrain, gp, tStep);
+    StructuralMaterial :: giveReducedSymVectorForm( reducedStrain, totalStrain, gp->giveMaterialMode() );
+    this->computeEta(eta, reducedStrain, gp, tStep);
     answer.initFromVector(eta, false);
     answer.times(-1.);
+
+    if ( gradientDamageFormulationType == GDFT_Eikonal ) {
+        double iA = this->computeEikonalInternalLength_a(gp);
+        if ( iA != 0 ) {
+            answer.times(1. / iA);
+        }
+    }
+
     if ( mode != TangentStiffness ) {
         // zero block for now
         answer.times(0);
@@ -184,25 +195,88 @@ IsotropicGradientDamageMaterial :: giveGradientDamageStiffnessMatrix_du(FloatMat
 
 
 void
-IsotropicGradientDamageMaterial :: giveGradientDamageStiffnessMatrix_dd(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
+IsotropicGradientDamageMaterial :: giveGradientDamageStiffnessMatrix_dd_NN(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
 {
-    answer.resize(1, 1);
-    answer.at(1, 1) = 1.;
+    if ( gradientDamageFormulationType == GDFT_Eikonal ) {
+        IsotropicGradientDamageMaterialStatus *status = static_cast< IsotropicGradientDamageMaterialStatus * >( this->giveStatus(gp) );
+        double tempKappa =  status->giveTempKappa();
+        double iA = this->computeEikonalInternalLength_a(gp);
+
+        answer.resize(1, 1);
+        answer.zero();
+
+        if ( iA != 0 ) {
+            answer.at(1, 1) += 1. / iA;
+        }
+
+        if ( mode == TangentStiffness ) {
+            if ( tempKappa > status->giveKappa() && iA != 0 ) {
+                double iAPrime = this->computeEikonalInternalLength_aPrime(gp);
+                double gPrime = this->damageFunctionPrime(tempKappa, gp);
+                double epsEqLocal = status->giveTempLocalDamageDrivingVariable();
+                double epsEqNonLocal = status->giveTempNonlocalDamageDrivingVariable();
+                answer.at(1, 1) += iAPrime / iA / iA * gPrime * ( epsEqNonLocal - epsEqLocal );
+            }
+        }
+    } else {
+        answer.clear();
+    }
+}
+
+double
+IsotropicGradientDamageMaterial :: computeEikonalInternalLength_a(GaussPoint *gp)
+{
+    IsotropicGradientDamageMaterialStatus *status = static_cast< IsotropicGradientDamageMaterialStatus * >( this->giveStatus(gp) );
+
+    double damage = status->giveTempDamage();
+    return sqrt(1. - damage) * internalLength;
+}
+
+double
+IsotropicGradientDamageMaterial :: computeEikonalInternalLength_b(GaussPoint *gp)
+{
+    IsotropicGradientDamageMaterialStatus *status = static_cast< IsotropicGradientDamageMaterialStatus * >( this->giveStatus(gp) );
+
+    double damage = status->giveTempDamage();
+    return sqrt(1. - damage) * internalLength;
 }
 
 
+double
+IsotropicGradientDamageMaterial :: computeEikonalInternalLength_aPrime(GaussPoint *gp)
+{
+    IsotropicGradientDamageMaterialStatus *status = static_cast< IsotropicGradientDamageMaterialStatus * >( this->giveStatus(gp) );
+
+    double damage = status->giveTempDamage();
+    return -0.5 / sqrt(1. - damage) * internalLength;
+}
+
+double
+IsotropicGradientDamageMaterial :: computeEikonalInternalLength_bPrime(GaussPoint *gp)
+{
+    IsotropicGradientDamageMaterialStatus *status = static_cast< IsotropicGradientDamageMaterialStatus * >( this->giveStatus(gp) );
+
+    double damage = status->giveTempDamage();
+    return -0.5 / sqrt(1. - damage) * internalLength;
+}
+
+
+
 void
-IsotropicGradientDamageMaterial :: giveGradientDamageStiffnessMatrix_dd_l(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
+IsotropicGradientDamageMaterial :: giveGradientDamageStiffnessMatrix_dd_BB(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
 {
     int n = this->giveDimension(gp);
     answer.resize(n, n);
     answer.beUnitMatrix();
 
-    if ( internalLengthDependenceType == ILD_None ) {
+    if ( gradientDamageFormulationType == GDFT_Standard ) {
         answer.times(internalLength * internalLength);
-    } else if ( internalLengthDependenceType == ILD_Damage_DecreasingInteractions ) {
+    } else if ( gradientDamageFormulationType == GDFT_DecreasingInteractions ) {
         double iL = this->computeInternalLength(gp);
         answer.times(iL * iL);
+    } else if ( gradientDamageFormulationType == GDFT_Eikonal ) {
+        double iB = this->computeEikonalInternalLength_b(gp);
+        answer.times(iB);
     } else {
         OOFEM_WARNING("Unknown internalLengthDependenceType");
     }
@@ -210,12 +284,12 @@ IsotropicGradientDamageMaterial :: giveGradientDamageStiffnessMatrix_dd_l(FloatM
 
 
 void
-IsotropicGradientDamageMaterial :: giveGradientDamageStiffnessMatrix_dd_dl(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
+IsotropicGradientDamageMaterial :: giveGradientDamageStiffnessMatrix_dd_BN(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
 {
     if ( mode == TangentStiffness ) {
-        if ( internalLengthDependenceType == ILD_None ) {
+        if ( gradientDamageFormulationType == GDFT_Standard ) {
             answer.clear();
-        } else if ( internalLengthDependenceType == ILD_Damage_DecreasingInteractions ) {
+        } else if ( gradientDamageFormulationType == GDFT_DecreasingInteractions ) {
             IsotropicGradientDamageMaterialStatus *status = static_cast< IsotropicGradientDamageMaterialStatus * >( this->giveStatus(gp) );
             double damage = status->giveTempDamage();
             double tempKappa =  status->giveTempKappa();
@@ -227,6 +301,20 @@ IsotropicGradientDamageMaterial :: giveGradientDamageStiffnessMatrix_dd_dl(Float
             answer.initFromVector(status->giveTempNonlocalDamageDrivingVariableGrad(), false);
             if ( tempKappa > status->giveKappa() ) {
                 answer.times(factor);
+            } else {
+                answer.times(0.);
+            }
+        } else if ( gradientDamageFormulationType == GDFT_Eikonal ) {
+            IsotropicGradientDamageMaterialStatus *status = static_cast< IsotropicGradientDamageMaterialStatus * >( this->giveStatus(gp) );
+            double tempKappa =  status->giveTempKappa();
+
+            double iBPrime = this->computeEikonalInternalLength_bPrime(gp);
+            double gPrime = this->damageFunctionPrime(tempKappa, gp);
+
+            answer.initFromVector(status->giveTempNonlocalDamageDrivingVariableGrad(), false);
+
+            if ( tempKappa > status->giveKappa() ) {
+                answer.times(iBPrime * gPrime);
             } else {
                 answer.times(0.);
             }
@@ -260,23 +348,35 @@ IsotropicGradientDamageMaterial :: giveNonlocalInternalForces_N_factor(double &a
 {
     IsotropicGradientDamageMaterialStatus *status = static_cast< IsotropicGradientDamageMaterialStatus * >( this->giveStatus(gp) );
     answer = nlDamageDrivingVariable - status->giveTempLocalDamageDrivingVariable();
+
+    if ( gradientDamageFormulationType == GDFT_Eikonal ) {
+        double iA = this->computeEikonalInternalLength_a(gp);
+        if ( iA != 0 ) {
+            answer = answer / iA;
+        }
+    }
 }
 
 void
 IsotropicGradientDamageMaterial :: giveNonlocalInternalForces_B_factor(FloatArray &answer, const FloatArray &nlDamageDrivingVariable_grad, GaussPoint *gp, TimeStep *tStep)
 {
     answer = nlDamageDrivingVariable_grad;
-    double iL = computeInternalLength(gp);
-    answer.times(iL * iL);
+    if ( gradientDamageFormulationType == GDFT_Eikonal ) {
+        double iB = this->computeEikonalInternalLength_b(gp);
+        answer.times(iB);
+    } else {
+        double iL = computeInternalLength(gp);
+        answer.times(iL * iL);
+    }
 }
 
 
 double
 IsotropicGradientDamageMaterial :: computeInternalLength(GaussPoint *gp)
 {
-    if ( internalLengthDependenceType == ILD_None ) {
+    if ( gradientDamageFormulationType == GDFT_Standard ) {
         return internalLength;
-    } else if ( internalLengthDependenceType == ILD_Damage_DecreasingInteractions ) {
+    } else if ( gradientDamageFormulationType == GDFT_DecreasingInteractions ) {
         IsotropicGradientDamageMaterialStatus *status = static_cast< IsotropicGradientDamageMaterialStatus * >( this->giveStatus(gp) );
         double damage = status->giveTempDamage();
         double factor = ( ( 1. - di_rho ) * exp(-di_eta * damage) + di_rho - exp(-di_eta) ) / ( 1. - exp(-di_eta) );

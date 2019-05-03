@@ -112,7 +112,7 @@ RankineMatGrad :: giveGradientDamageStiffnessMatrix_du(FloatMatrix &answer, MatR
 
 
 void
-RankineMatGrad :: giveGradientDamageStiffnessMatrix_dd_l(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
+RankineMatGrad :: giveGradientDamageStiffnessMatrix_dd_BB(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
 {
     MaterialMode mMode = gp->giveMaterialMode();
     switch ( mMode ) {
@@ -124,11 +124,6 @@ RankineMatGrad :: giveGradientDamageStiffnessMatrix_dd_l(FloatMatrix &answer, Ma
     }
 }
 
-void
-RankineMatGrad :: giveGradientDamageStiffnessMatrix_dd(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
-{
-    answer.resize(0, 0);
-}
 
 void
 RankineMatGrad :: givePlaneStressStiffMtrx(FloatMatrix &answer, MatResponseMode mode, GaussPoint *gp, TimeStep *tStep)
@@ -254,13 +249,24 @@ void
 RankineMatGrad :: giveNonlocalInternalForces_N_factor(double &answer, double nlDamageDrivingVariable, GaussPoint *gp, TimeStep *tStep)
 {
     answer = nlDamageDrivingVariable;
+    /*    if ( gradientDamageFormulationType == GDFT_Eikonal ) {
+     * double iA = this->computeEikonalInternalLength_a(gp);
+     * if(iA != 0) {
+     *  answer = answer/iA;
+     * }
+     * } */
 }
 
 void
 RankineMatGrad :: giveNonlocalInternalForces_B_factor(FloatArray &answer, const FloatArray &nlDamageDrivingVariable_grad, GaussPoint *gp, TimeStep *tStep)
 {
     answer = nlDamageDrivingVariable_grad;
-    answer.times(internalLength * internalLength);
+    /* if ( gradientDamageFormulationType == GDFT_Eikonal ) {
+     * double iB = this->computeEikonalInternalLength_b(gp);
+     * answer.times(iB);
+     * } else {
+     * answer.times(internalLength * internalLength);
+     * }*/
 }
 
 
@@ -271,11 +277,6 @@ RankineMatGrad :: computeLocalDamageDrivingVariable(double &answer, GaussPoint *
     RankineMatGradStatus *status = static_cast< RankineMatGradStatus * >( this->giveStatus(gp) );
     answer =  status->giveTempCumulativePlasticStrain();
 }
-
-
-
-
-
 
 
 void
