@@ -38,6 +38,8 @@ set (core_unsorted
     #
     symcompcol.C compcol.C
     unstructuredgridfield.C
+    # 
+    loadbalancer.C
     )
 
 #oofegutils
@@ -270,7 +272,6 @@ set (core_parallel
     domaintransactionmanager.C
     parallelordering.C
     dyncombuff.C
-    loadbalancer.C
     wallclockloadbalancermonitor.C
     nonlocalmatwtp.C
     )

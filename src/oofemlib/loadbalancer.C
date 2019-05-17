@@ -44,15 +44,32 @@
 #include "floatarray.h"
 #include "intarray.h"
 
+#ifdef __PARALLEL_MODE
 #include "processcomm.h"
 #include "datastream.h"
 #include "communicator.h"
 #include "domaintransactionmanager.h"
 #include "nonlocalmatwtp.h"
+#endif
 
 namespace oofem {
   //#define __VERBOSE_PARALLEL
   //#define LoadBalancer_debug_print
+
+#ifndef __PARALLEL_MODE
+
+LoadBalancer :: LoadBalancer(Domain *d)  : wtpList()
+{
+    domain = d;
+}
+
+void LoadBalancer::migrateLoad(Domain *d) {}
+void LoadBalancer::printStatistics() const {}
+IRResultType LoadBalancer::initializeFrom(InputRecord *ir) { return IRRT_OK; }
+IRResultType LoadBalancerMonitor::initializeFrom(InputRecord *ir) { return IRRT_OK; }
+
+#else
+
 
 LoadBalancer :: LoadBalancer(Domain *d)  : wtpList()
 {
@@ -579,9 +596,5 @@ LoadBalancerMonitor :: initializeFrom(InputRecord *ir)
  */
 
 
-
-LoadBalancer :: WorkTransferPlugin :: WorkTransferPlugin(LoadBalancer *_lb) {
-    lb = _lb;
-}
-LoadBalancer :: WorkTransferPlugin :: ~WorkTransferPlugin() { }
+#endif // end __PARALLEL_MODE
 } // end namespace oofem
