@@ -1,6 +1,6 @@
 RVE11nnbc.out
 1x1 RVE - nonlinear structural analysis of the RVE - Neumann-Neumann BC
-StaticStructural nsteps 1 deltat 1.0 constrainednrminiter 5 rtolf 1.0e-3 MaxIter 30 minIter 1 stiffmode 2 initialguess 1 nmodules 0 lstype 0 smtype 1  suppress_output
+StaticStructural nsteps 1 deltat 1.0 constrainednrminiter 5 rtolf 1.0e-3 MaxIter 30 minIter 1 stiffmode 2 initialguess 1 nmodules 0 lstype 3 smtype 7  suppress_output
 domain 2dplanestress
 OutputManager
 ndofman 143 nelem 140 ncrosssect 8 nmat 4 nbc 1 nic 0 nltf 1 nset 13
@@ -125,28 +125,28 @@ node 118 coords 3 0.08 -0.08 0.0
 node 119 coords 3 0.08 -0.06 0.0
 node 120 coords 3 0.08 -0.04 0.0
 node 121 coords 3 0.08 -0.02 0.0
-node 122 coords 3 0.0 0.0 0.0 dofidmask 3 1 2 6 doftype 3 1 0 0 mastermask 3 1 0 0
-node 123 coords 3 0.0 0.1 0.0  dofidmask 3 1 2 6 doftype 3 1 0 0 mastermask 3 5 0 0
-node 124 coords 3 0.0 -0.1 0.0 dofidmask 3 1 2 6 doftype 3 1 0 0 mastermask 3 4 0 0
-node 125 coords 3 0.0 -0.08 0.0 dofidmask 3 1 2 6 doftype 3 1 0 0 mastermask 3 18 0 0
-node 126 coords 3 0.0 -0.06 0.0 dofidmask 3 1 2 6 doftype 3 1 0 0 mastermask 3 19 0 0
-node 127 coords 3 0.0 -0.04 0.0 dofidmask 3 1 2 6 doftype 3 1 0 0 mastermask 3 20 0 0
-node 128 coords 3 0.0 -0.02 0.0 dofidmask 3 1 2 6 doftype 3 1 0 0 mastermask 3 21 0 0
-node 129 coords 3 0.0 0.02 0.0 dofidmask 3 1 2 6 doftype 3 1 0 0 mastermask 3 22 0 0
-node 130 coords 3 0.0 0.04 0.0 dofidmask 3 1 2 6 doftype 3 1 0 0 mastermask 3 23 0 0
-node 131 coords 3 0.0 0.06 0.0 dofidmask 3 1 2 6 doftype 3 1 0 0 mastermask 3 24 0 0
-node 132 coords 3 0.0 0.08 0.0  dofidmask 3 1 2 6 doftype 3 1 0 0 mastermask 3 25 0 0
-node 133 coords 3 0.0 0.0 0.0  dofidmask 3 1 2 6 doftype 3 0 1 0  mastermask 3 0 1 0
-node 134 coords 3 0.1 0.0 0.0 dofidmask 3 1 2 6 doftype 3 0 1 0 mastermask 3 0 3 0
-node 135 coords 3 -0.1 0.0 0.0 dofidmask 3 1 2 6 doftype 3 0 1 0 mastermask 3 0 2 0
-node 136 coords 3 -0.08 0.0 0.0 dofidmask 3 1 2 6 doftype 3 0 1 0  mastermask 3 0 14 0
-node 137 coords 3 -0.06 0.0 0.0 dofidmask 3 1 2 6 doftype 3 0 1 0  mastermask 3 0 15 0
-node 138 coords 3 -0.04 0.0 0.0 dofidmask 3 1 2 6 doftype 3 0 1 0  mastermask 3 0 16 0
-node 139 coords 3 -0.02 0.0 0.0 dofidmask 3 1 2 6 doftype 3 0 1 0  mastermask 3 0 17 0
-node 140 coords 3 0.02 0.0 0.0 dofidmask 3 1 2 6 doftype 3 0 1 0  mastermask 3 0 10 0
-node 141 coords 3 0.04 0.0 0.0 dofidmask 3 1 2 6 doftype 3 0 1 0  mastermask 3 0 11 0
-node 142 coords 3 0.06 0.0 0.0 dofidmask 3 1 2 6 doftype 3 0 1 0  mastermask 3 0 12 0
-node 143 coords 3 0.08 0.0 0.0 dofidmask 3 1 2 6 doftype 3 0 1 0  mastermask 3 0 13 0
+node 122 coords 3 0.0 0.0 0.0
+node 123 coords 3 0.0 0.1 0.0
+node 124 coords 3 0.0 -0.1 0.0
+node 125 coords 3 0.0 -0.08 0.0
+node 126 coords 3 0.0 -0.06 0.0
+node 127 coords 3 0.0 -0.04 0.0
+node 128 coords 3 0.0 -0.02 0.0
+node 129 coords 3 0.0 0.02 0.0
+node 130 coords 3 0.0 0.04 0.0
+node 131 coords 3 0.0 0.06 0.0
+node 132 coords 3 0.0 0.08 0.0
+node 133 coords 3 0.0 0.0 0.0
+node 134 coords 3 0.1 0.0 0.0
+node 135 coords 3 -0.1 0.0 0.0
+node 136 coords 3 -0.08 0.0 0.0
+node 137 coords 3 -0.06 0.0 0.0
+node 138 coords 3 -0.04 0.0 0.0
+node 139 coords 3 -0.02 0.0 0.0
+node 140 coords 3 0.02 0.0 0.0
+node 141 coords 3 0.04 0.0 0.0
+node 142 coords 3 0.06 0.0 0.0
+node 143 coords 3 0.08 0.0 0.0
 planestress2d 1 nodes  4 3 46 58 13
 planestress2d 2 nodes  4 13 58 59 12
 planestress2d 3 nodes  4 12 59 60 11

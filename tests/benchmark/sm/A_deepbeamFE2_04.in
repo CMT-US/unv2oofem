@@ -1,6 +1,6 @@
 A_deepbeamFE2_04.out
 FE2 analysis of a reinforced concrete deep beam - Neumann-Neumann BC
-StaticStructural nsteps 2 deltat 1.0 constrainednrminiter 5 rtolf 1.0e-3 MaxIter 20 minIter 1 initialguess 1 nmodules 1
+StaticStructural nsteps 2 deltat 1.0 constrainednrminiter 5 rtolf 1.0e-3 MaxIter 20 minIter 1 initialguess 1 nmodules 1 lstype 3 smtype 7
 errorcheck
 #vtkxml tstep_all domain_all vars 4 1 4 5 12 cellvars 1 47 stype 2
 #vtkxml tstep_all domain_all vars 4 1 4 5 12 ipvars 3 1 4 5
@@ -94,7 +94,7 @@ Set 2 nodes 1 11
 Set 3 nodes 1 19
 Set 4 nodes 5 3 4 15 16 17
 SimpleCS 1 thick 0.2 material 1 set 1
-structfe2materialplanestress 1 d 1.0 filename afe2rve1x1nn.in.rve use_ext_stiffness dSdE 3 3 {3.493540255292626e+10  6.932128942019436e+09	1.245753616901010e+03; 6.932128942019427e+09 	3.474058438066290e+10	3.604844467200792e+02; 1.245753613501134e+03	3.604844311944078e+02	1.221679586417777e+10}
+structfe2materialplanestress 1 d 1.0 filename afe2rve1x1nn.in.rve use_ext_stiffness dSdE 3 3 {3.493540255292631e+10  6.932128942019443e+09  1.41370719689362e+03; 6.932128942019440e+09  3.474058438066293e+10	4.090852826475131e+02; 1.413707197163544e+03  4.090852820899508e+02  1.386387504939600e+10}
 BoundaryCondition 1 loadTimeFunction 1 dofs 1 1 values 1 0.0 set 4
 BoundaryCondition 2 loadTimeFunction 1 dofs 1 2 values 1 0.0 set 2
 Boundarycondition 3 loadTimeFunction 2 dofs 1 2 values 1 -1e-4 set 3
@@ -103,7 +103,7 @@ PiecewiseLinFunction 2 t 2 1.0 3.0 f(t) 2 1.0 3.0
 
 #%BEGIN_CHECK% tolerance 1.e-2
 #NODE tStep 1 number 19 dof 2 unknown d value -1.00000e-4
-#REACTION tStep 1 number 19 dof 2 value -6.90679170e+04
+#REACTION tStep 1 number 19 dof 2 value -7.12828577e+04
 #NODE tStep 2 number 19 dof 2 unknown d value -2.00000e-4
-#REACTION tStep 2 number 19 dof 2 value -1.40269648e+05
+#REACTION tStep 2 number 19 dof 2 value -1.42565715e+05
 #%END_CHECK%
