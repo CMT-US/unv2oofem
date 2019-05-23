@@ -58,7 +58,7 @@ FEI2dLineLin IntElLine1 :: interp(1, 1);
 
 
 IntElLine1 :: IntElLine1(int n, Domain *aDomain) :
-    StructuralInterfaceElement(n, aDomain), NodalAveragingRecoveryModelInterface()
+    StructuralInterfaceElement(n, aDomain)
 {
     numberOfDofMans = 4;
     numberOfGaussPoints = 4;
