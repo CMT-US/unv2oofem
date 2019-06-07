@@ -187,7 +187,8 @@ namespace oofem {
     ENUM_ITEM_WITH_VALUE(IST_ShearSlipGradient, 137) \
     ENUM_ITEM_WITH_VALUE(IST_ReinforcementMembraneStress, 138) \
     ENUM_ITEM_WITH_VALUE(IST_EquivalentTime, 139) \
-    ENUM_ITEM_WITH_VALUE(IST_NormalStress, 140)
+    ENUM_ITEM_WITH_VALUE(IST_NormalStress, 140) \
+    ENUM_ITEM_WITH_VALUE(IST_IncrementCreepModulus, 141)
   
 /**
  * Type  representing the physical meaning of element or constitutive model internal variable.

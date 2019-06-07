@@ -2304,7 +2304,6 @@ StructuralMaterial :: computeStressIndependentStrainVector(FloatArray &answer,
     answer.clear();
 
     if ( tStep->giveIntrinsicTime() < this->castingTime ) {
-        answer.zero();
         return;
     }
 

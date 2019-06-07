@@ -22,7 +22,7 @@ node 11 coords 3 0.4 0.4 0.4 dofidmask 9 1 2 3 4 5 6 7 8 9
 libeam3d 1 nodes 2 1 2 refnode 9 crossSect 1
 libeam3d 2 nodes 2 2 3 refnode 9 crossSect 1
 libeam3d 3 nodes 2 3 4 refnode 9 crossSect 1
-libeam3dboundary 4 nodes 3 4 1 11 refnode 6 crossSect 1 location 2 0 16
+libeam3dboundary 4 nodes 3 4 1 11 refnode 9 crossSect 1 location 2 0 16
 libeam3d 5 nodes 2 5 6 refnode 10 crossSect 1
 libeam3d 6 nodes 2 6 7 refnode 10 crossSect 1
 libeam3d 7 nodes 2 7 8 refnode 10 crossSect 1
