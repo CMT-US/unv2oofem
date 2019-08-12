@@ -77,17 +77,17 @@ public:
     void  letTempPlasticStrainBe(const double &v)
     { this->tempPlasticStrain = v; }
 
-    void   printOutputAt(FILE *file, TimeStep *tStep);
+    void   printOutputAt(FILE *file, TimeStep *tStep) override;
 
-    const char *giveClassName() const { return "LinkSlipStatus"; }
+    const char *giveClassName() const override { return "LinkSlipStatus"; }
 
-    virtual void initTempStatus();
+    void initTempStatus() override;
 
-    virtual void updateYourself(TimeStep *); // update after new equilibrium state reached
+    void updateYourself(TimeStep *) override; // update after new equilibrium state reached
 
-    contextIOResultType    saveContext(DataStream &stream, ContextMode mode, void *obj = NULL);
+    void saveContext(DataStream &stream, ContextMode mode) override;
 
-    contextIOResultType    restoreContext(DataStream &stream, ContextMode mode, void *obj = NULL);
+    void restoreContext(DataStream &stream, ContextMode mode) override;
 };
 
 
@@ -133,46 +133,46 @@ public:
     /// Destructor
     virtual ~LinkSlip();
 
-    virtual const char *giveInputRecordName() const { return _IFT_LinkSlip_Name; }
-    virtual const char *giveClassName() const { return "LinkSlip"; }
+    const char *giveInputRecordName() const override { return _IFT_LinkSlip_Name; }
+    const char *giveClassName() const override { return "LinkSlip"; }
 
-    virtual IRResultType initializeFrom(InputRecord *ir);
+    IRResultType initializeFrom(InputRecord *ir) override;
 
     //  virtual void computeStressIndependentStrainVector(FloatArray &answer, GaussPoint *gp, TimeStep *stepN, ValueModeType mode);
 
-    virtual void  giveThermalDilatationVector(FloatArray &answer,  GaussPoint *gp,  TimeStep *tStep);
+    void  giveThermalDilatationVector(FloatArray &answer,  GaussPoint *gp,  TimeStep *tStep) override;
 
 
-    virtual bool isCharacteristicMtrxSymmetric(MatResponseMode rMode) { return false; }
+    bool isCharacteristicMtrxSymmetric(MatResponseMode rMode) override { return false; }
 
 
-    virtual void give3dMaterialStiffnessMatrix(FloatMatrix &answer,
+    void give3dMaterialStiffnessMatrix(FloatMatrix &answer,
 				 MatResponseMode rmode,
 				 GaussPoint *gp,
-				 TimeStep *atTime);
+				 TimeStep *atTime) override;
 
     
-    virtual int hasMaterialModeCapability(MaterialMode mode);
+    int hasMaterialModeCapability(MaterialMode mode) override;
 
 
-    virtual Interface *giveInterface(InterfaceType);
+    Interface *giveInterface(InterfaceType) override;
 
-    virtual void giveRealStressVector_3d(FloatArray &answer, GaussPoint *,
-                                      const FloatArray &, TimeStep *);
+    void giveRealStressVector_3d(FloatArray &answer, GaussPoint *,
+                                      const FloatArray &, TimeStep *) override;
 
-    virtual MaterialStatus *CreateStatus(GaussPoint *gp) const;
+    MaterialStatus *CreateStatus(GaussPoint *gp) const override;
 
 
-    virtual double  give(int aProperty, GaussPoint *gp);
+    double  give(int aProperty, GaussPoint *gp) override;
 
 
 
 protected:
 
-    virtual int giveIPValue(FloatArray &answer,
+    int giveIPValue(FloatArray &answer,
                             GaussPoint *gp,
                             InternalStateType type,
-                            TimeStep *atTime);
+                            TimeStep *atTime) override;
 };
 } // end namespace oofem
 

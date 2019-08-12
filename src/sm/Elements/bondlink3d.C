@@ -373,22 +373,17 @@ BondLink3d :: computeGeometryProperties()
     return;
 }
   
-  void
-  BondLink3d :: saveContext(DataStream &stream, ContextMode mode)
-  {
+void
+BondLink3d :: saveContext(DataStream &stream, ContextMode mode)
+{
     StructuralElement :: saveContext(stream, mode);
-    
-  }
+}
   
 
-  void
-  BondLink3d :: restoreContext(DataStream &stream, ContextMode mode)
+void
+BondLink3d :: restoreContext(DataStream &stream, ContextMode mode)
 {
-  
   StructuralElement :: restoreContext(stream, mode);
-  
-  contextIOResultType iores;
-  
 }
 
 

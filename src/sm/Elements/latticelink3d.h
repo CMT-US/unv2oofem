@@ -68,40 +68,40 @@ public:
     LatticeLink3d(int n, Domain *);
     virtual ~LatticeLink3d();
 
-    double computeVolumeAround(GaussPoint *aGaussPoint);
+    double computeVolumeAround(GaussPoint *aGaussPoint) override;
     
-    double giveLength();
+    double giveLength() override;
     
-    virtual int giveLocalCoordinateSystem(FloatMatrix &answer);
+    int giveLocalCoordinateSystem(FloatMatrix &answer) override;
 
     /**
      * This function is different from the standard computeGlobalCordinates
      * function as it returns the global coordinates of the gausspoint
      * independent to the value of the lcoords.
      */
-    virtual int computeGlobalCoordinates(FloatArray &answer, const FloatArray &lcoords);
+    int computeGlobalCoordinates(FloatArray &answer, const FloatArray &lcoords) override;
 
-    virtual double giveBondLength() override;
+    double giveBondLength() override;
     
-    virtual double giveBondDiameter() override;
+    double giveBondDiameter() override;
 
-    virtual double giveBondEndLength() override;
+    double giveBondEndLength() override;
     
-    virtual int computeNumberOfDofs() { return 12; }
+    int computeNumberOfDofs() override { return 12; }
 
-    virtual void giveDofManDofIDMask(int inode, IntArray &) const;
+    void giveDofManDofIDMask(int inode, IntArray &) const override;
 
-    virtual void giveGPCoordinates(FloatArray &coords);
+    void giveGPCoordinates(FloatArray &coords);
 
     virtual void computeGeometryProperties();
     
-    virtual void giveInternalForcesVector(FloatArray &answer, TimeStep *tStep, int useUpdatedGpRecord = 0);
+    void giveInternalForcesVector(FloatArray &answer, TimeStep *tStep, int useUpdatedGpRecord = 0) override;
     
-    virtual const char *giveInputRecordName() const { return _IFT_LatticeLink3d_Name; }
-    virtual const char *giveClassName()  const override { return "LatticeLink3d"; }
-    virtual IRResultType initializeFrom(InputRecord *ir) override;
+    const char *giveInputRecordName() const override { return _IFT_LatticeLink3d_Name; }
+    const char *giveClassName()  const override { return "LatticeLink3d"; }
+    IRResultType initializeFrom(InputRecord *ir) override;
 
-    virtual Element_Geometry_Type giveGeometryType() const  override { return EGT_line_1; } 
+    Element_Geometry_Type giveGeometryType() const  override { return EGT_line_1; }
 
     void saveContext(DataStream &stream, ContextMode mode) override;
 
@@ -115,9 +115,9 @@ public:
 
 
 protected:
-    virtual void computeBmatrixAt(GaussPoint *, FloatMatrix &, int = 1, int = ALL_STRAINS) override;
-    virtual bool computeGtoLRotationMatrix(FloatMatrix &) override;
-    virtual void computeStiffnessMatrix(FloatMatrix &answer, MatResponseMode rMode, TimeStep *tStep) override;
+    void computeBmatrixAt(GaussPoint *, FloatMatrix &, int = 1, int = ALL_STRAINS) override;
+    bool computeGtoLRotationMatrix(FloatMatrix &) override;
+    void computeStiffnessMatrix(FloatMatrix &answer, MatResponseMode rMode, TimeStep *tStep) override;
     void computeConstitutiveMatrixAt(FloatMatrix &answer, MatResponseMode rMode, GaussPoint *gp, TimeStep *tStep) override;
     void computeStressVector(FloatArray &answer, const FloatArray &strain, GaussPoint *gp, TimeStep *tStep) override;
 
@@ -127,8 +127,8 @@ protected:
      */
     void computePropertiesOfCrossSection();
 
-    virtual void computeGaussPoints() override;
-    virtual integrationDomain  giveIntegrationDomain() { return _Line; }
+    void computeGaussPoints() override;
+    integrationDomain  giveIntegrationDomain() const override { return _Line; }
 
 };
 

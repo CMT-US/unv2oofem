@@ -56,36 +56,36 @@
 namespace oofem {
   REGISTER_Material(LinkSlip);
 
-  /// constructor which creates a dummy material without a status and without random extension interface
-  LinkSlip :: LinkSlip(int n, Domain *d, double e0, double a1, double a2) : LinearElasticMaterial(n, d)
-  {
+/// constructor which creates a dummy material without a status and without random extension interface
+LinkSlip :: LinkSlip(int n, Domain *d, double e0, double a1, double a2) : LinearElasticMaterial(n, d)
+{
     eNormalMean = e0;
     alphaOne = a1;
     alphaTwo = a2;
-  }
+}
 
 
 
-  LinkSlip :: ~LinkSlip()
-  //
-  // destructor
-  //
-  {}
+LinkSlip :: ~LinkSlip()
+//
+// destructor
+//
+{}
 
-  int
-  LinkSlip :: hasMaterialModeCapability(MaterialMode mode)
-  {
+int
+LinkSlip :: hasMaterialModeCapability(MaterialMode mode)
+{
     if ( mode == _3dMat ) {
-      return 1;
+        return 1;
     }
 
     return 0;
-  }
+}
 
 
-  IRResultType
-  LinkSlip :: initializeFrom(InputRecord *ir)
-  {
+IRResultType
+LinkSlip :: initializeFrom(InputRecord *ir)
+{
     IRResultType result;                             // Required by IR_GIVE_FIELD macro
 
 
@@ -107,24 +107,24 @@ namespace oofem {
     IR_GIVE_FIELD(ir, tauZero, _IFT_LinkSlip_tauZero); // Macro
     
     return IRRT_OK;
-  }
+}
 
 
-  MaterialStatus *
-  LinkSlip :: CreateStatus(GaussPoint *gp) const
-  {
+MaterialStatus *
+LinkSlip :: CreateStatus(GaussPoint *gp) const
+{
     LinkSlipStatus *answer = new LinkSlipStatus(gp);
 
     return answer;
-  }
+}
   
 
-  void
-  LinkSlip :: giveRealStressVector_3d(FloatArray &answer,
+void
+LinkSlip :: giveRealStressVector_3d(FloatArray &answer,
 				   GaussPoint *gp,
 				   const FloatArray &totalStrain,
 				   TimeStep *atTime)
-  {
+{
     LinkSlipStatus *status = static_cast< LinkSlipStatus * >( this->giveStatus(gp) );
 
     //strain has the meanig of slip. Stress is force
@@ -163,19 +163,19 @@ namespace oofem {
     status->letTempStressVectorBe(answer);
 
     return;
-  }
+}
 
-  Interface *
-  LinkSlip :: giveInterface(InterfaceType type)
-  {
+Interface *
+LinkSlip :: giveInterface(InterfaceType type)
+{
     return NULL;
-  }
+}
 
 
 
-  void
-  LinkSlip :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatResponseMode rmode, GaussPoint *gp, TimeStep *atTime)
-  {
+void
+LinkSlip :: give3dMaterialStiffnessMatrix(FloatMatrix &answer, MatResponseMode rmode, GaussPoint *gp, TimeStep *atTime)
+{
  
     /* Returns elastic moduli in reduced stress-strain space*/
     answer.resize(6, 6);
@@ -192,46 +192,46 @@ namespace oofem {
     answer.times(this->eNormalMean);
 
     
-  }
+}
 
-  LinkSlipStatus :: LinkSlipStatus(GaussPoint *g) :  StructuralMaterialStatus(g)
-  {
+LinkSlipStatus :: LinkSlipStatus(GaussPoint *g) :  StructuralMaterialStatus(g)
+{
 
-  }
+}
   
 
-  void
-  LinkSlipStatus :: initTempStatus()
+void
+LinkSlipStatus :: initTempStatus()
   //
   // initializes temp variables according to variables form previous equlibrium state.
   // builds new crackMap
   //
-  {
+{
     StructuralMaterialStatus :: initTempStatus();
     this->tempPlasticStrain = this->plasticStrain;
-  }
+}
   
 
-  void
-  LinkSlip :: giveThermalDilatationVector(FloatArray &answer,
+void
+LinkSlip :: giveThermalDilatationVector(FloatArray &answer,
 					  GaussPoint *gp,  TimeStep *tStep)
   //
   // returns a FloatArray(6) of initial strain vector
   // caused by unit temperature in direction of
   // gp (element) local axes
   //
-  {
+{
     double alpha = this->give(tAlpha, gp);
   
     answer.resize(6);
     answer.zero();
 
     answer.at(1) = alpha;
-  }
+}
 
-  void
-  LinkSlipStatus :: printOutputAt(FILE *file, TimeStep *tStep)
-  {
+void
+LinkSlipStatus :: printOutputAt(FILE *file, TimeStep *tStep)
+{
     MaterialStatus :: printOutputAt(file, tStep);
 
     
@@ -249,82 +249,75 @@ namespace oofem {
     
     fprintf(file, "plasticStrain %.8e\n", this->plasticStrain);
     return;
-  }
+}
   
-  double
-  LinkSlip :: give(int aProperty, GaussPoint *gp)
-  {
+double
+LinkSlip :: give(int aProperty, GaussPoint *gp)
+{
     if ( aProperty == eNormal_ID ) {
       return 1.;
     } else {
       return LinearElasticMaterial :: give(aProperty, gp);
     }
-  }
+}
 
 
   
-  contextIOResultType
-  LinkSlipStatus :: saveContext(DataStream &stream, ContextMode mode, void *obj)
+void
+LinkSlipStatus :: saveContext(DataStream &stream, ContextMode mode)
   //
   // saves full information stored in this Status
   // no temp variables stored
   //
-  {
+{
     // save parent class status
-  
     StructuralMaterialStatus :: saveContext(stream, mode);
-  
+
     // write a raw data
     if ( !stream.write(plasticStrain) ) {
       THROW_CIOERR(CIO_IOERR);
     }
-  
-  
-    return CIO_OK;
-  }
+}
 
 
-  contextIOResultType
-  LinkSlipStatus :: restoreContext(DataStream &stream, ContextMode mode, void *obj)
+void
+LinkSlipStatus :: restoreContext(DataStream &stream, ContextMode mode)
   //
   // restores full information stored in stream to this Status
   //
-  {
+{
     StructuralMaterialStatus :: restoreContext(stream, mode);
-    
+
     // read raw data
     if ( !stream.read(plasticStrain) ) {
       THROW_CIOERR(CIO_IOERR);
     }
-    
-    
-    return CIO_OK;
-  }
+}
  
-  void
-  LinkSlipStatus :: updateYourself(TimeStep *atTime)
+void
+LinkSlipStatus :: updateYourself(TimeStep *atTime)
   //
   // updates variables (nonTemp variables describing situation at previous equilibrium state)
   // after a new equilibrium state has been reached
   // temporary variables are having values corresponding to newly reached equilibrium.
   //
-  {
+{
     StructuralMaterialStatus :: updateYourself(atTime);
     this->plasticStrain = this->tempPlasticStrain;
-  }
+}
 
   
   
-  int
-  LinkSlip :: giveIPValue(FloatArray &answer,
+int
+LinkSlip :: giveIPValue(FloatArray &answer,
 			  GaussPoint *gp,
 			  InternalStateType type,
 			  TimeStep *atTime)
-  {
+{
   
     // return LinearElasticMaterial :: giveIPValue(answer, gp, type, atTime);
     return Material :: giveIPValue(answer, gp, type, atTime);
 
     
-  }
+}
 }

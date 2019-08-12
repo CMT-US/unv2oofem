@@ -402,8 +402,6 @@ LatticeLink3d :: computeGeometryProperties()
   LatticeLink3d :: saveContext(DataStream &stream, ContextMode mode)
   {
     LatticeStructuralElement :: saveContext(stream, mode);
-    
-    contextIOResultType iores;
   
 }
   
@@ -413,8 +411,6 @@ LatticeLink3d :: computeGeometryProperties()
 {
   
   LatticeStructuralElement :: restoreContext(stream, mode);
-  
-  contextIOResultType iores;
   
 }
 
