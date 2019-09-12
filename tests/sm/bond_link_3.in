@@ -1,8 +1,8 @@
 bond_link_3.out
 Bond test
-StaticStructural nsteps 100 nmodules 2 initialguess 1 lstype 0 smtype 1 stiffmode 2 rtolv 1.e-3
-vtkxmlperiodic tstep_all primvars 1 1 vars 2 4 1 stype 0 regionsets 1 1
-vtkxmlperiodic tstep_all primvars 1 1 vars 2 4 1 stype 0 regionsets 1 3
+StaticStructural nsteps 100 nmodules 0 initialguess 1 lstype 0 smtype 1 stiffmode 2 rtolv 1.e-3
+#vtkxmlperiodic tstep_all primvars 1 1 vars 2 4 1 stype 0 regionsets 1 1
+#vtkxmlperiodic tstep_all primvars 1 1 vars 2 4 1 stype 0 regionsets 1 3
 #matlab tstep_all mesh data reactionforces integrationpoints internalvars 7 4 1 12 7 8 98 99
 domain 3d
 OutputManager tstep_all dofman_all element_all
