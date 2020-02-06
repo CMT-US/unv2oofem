@@ -487,7 +487,7 @@ if (USE_PYTHON_BINDINGS OR USE_PYTHON)
 
     if (USE_PYTHON_BINDINGS)
         # require boost_python also for python stuff by itself
-        find_package(Boost COMPONENTS "python-py${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}" REQUIRED)
+        find_package(Boost COMPONENTS "python" REQUIRED)
         include_directories (${Boost_INCLUDE_DIRS})
         list (APPEND EXT_LIBS ${Boost_LIBRARIES})
         add_definitions(-DBOOST_PYTHON)
