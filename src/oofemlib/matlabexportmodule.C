@@ -845,6 +845,10 @@ MatlabExportModule :: doOutputIntegrationPointFields(TimeStep *tStep,    FILE *F
                     fprintf( FID, "%e ", coords.at(ic) );
                 }
                 fprintf( FID, "]; \n" );
+                
+                //export volume around Gauss point
+                fprintf( FID, "\tIntegrationPointFields.Elements{%i}.integrationRule{%i}.ip{%i}.volume = %e; \n ",
+                         ielem, i, ip->giveNumber(), el->computeVolumeAround(ip));
 
                 // export internal variables
                 fprintf( FID, "\tIntegrationPointFields.Elements{%i}.integrationRule{%i}.ip{%i}.valArray = cell(%i,1); \n",
