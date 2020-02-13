@@ -41,6 +41,7 @@ __pycache__
 .*.kate-swp
 *.backup
 *kdev*
+.DS_Store
 makefile
 elixirtest.c
 configure
@@ -52,3 +53,5 @@ tests/sm/crack0Step0.vtk
 tests/sm/crack1Step0.vtk
 tests/sm/crack2Step0.vtk
 tests/sm/t3d.bmf
+tests/tmsm/concretefcmviscoelastic_tmsm.out?
+tests/tmsm/concretefcmviscoelasticcasting_tmsm.out?
