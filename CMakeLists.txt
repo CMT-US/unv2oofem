@@ -786,7 +786,7 @@ endif()
 if (USE_SM)
     file (GLOB sm_benchmark RELATIVE "${oofem_BENCHMARK_DIR}/sm" "${oofem_BENCHMARK_DIR}/sm/*.in")
     foreach (case ${sm_benchmark})
-        #Need special solver settings for A_deppebamFE2_04 and C_deepbeamFE2slipNeumann
+        #Need special solver settings for A_deepbeamFE2_04 and C_deepbeamFE2slipNeumann
         if (${case} STREQUAL "A_deepbeamFE2_04.in" OR ${case} STREQUAL "C_deepbeamFE2slipNeumann_01.in")
             add_test (NAME "benchmark_sm_${case}" WORKING_DIRECTORY ${oofem_BENCHMARK_DIR}/sm COMMAND ${oofem_cmd} -f ${case} -ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps)
         else ()
